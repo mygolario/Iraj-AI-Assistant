@@ -629,6 +629,11 @@ elif page == "💼 Sales Consultant & Contracts":
                             openai_key = None 
 
                     openrouter_key = os.environ.get("OPENROUTER_API_KEY")
+                    if not openrouter_key:
+                        try:
+                            openrouter_key = st.secrets.get("OPENROUTER_API_KEY")
+                        except Exception:
+                            pass
                     if not response_content and openrouter_key:
                         try:
                             import openai
