@@ -40,16 +40,16 @@ st.markdown("""
     
     /* Header styling */
     .main-header {
-        font-family: 'Outfit', 'Inter', sans-serif;
-        color: #1e293b;
-        font-weight: 700;
-        margin-bottom: 5px;
+        font-family: 'Outfit', 'Inter', sans-serif !important;
+        color: #0f172a !important;
+        font-weight: 800 !important;
+        margin-bottom: 5px !important;
     }
     .sub-header {
-        font-family: 'Inter', sans-serif;
-        color: #64748b;
-        font-size: 1.1rem;
-        margin-bottom: 25px;
+        font-family: 'Inter', sans-serif !important;
+        color: #475569 !important;
+        font-size: 1.1rem !important;
+        margin-bottom: 25px !important;
     }
     
     /* Premium card container styling */
