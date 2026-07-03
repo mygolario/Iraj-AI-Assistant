@@ -60,3 +60,45 @@ The system must include two scripts to programmatically generate data and verify
 
 ### Verification Run
 - [ ] Running `python verify_app.py` passes all assertions successfully.
+
+## Follow-up — 2026-07-03T10:41:09+03:30
+
+# Teamwork Project Prompt — Draft
+
+Production-ready steel rebar manufacturing Sales Manager Assistant: remove mock data and design a beautiful, comprehensive, and personalized UI/UX dashboard.
+
+Working directory: d:/Ario Vibe Coding/Iraj-AI-Assistant
+Integrity mode: benchmark
+
+## Requirements
+
+### R1. Eliminate Mock Data & Connect Live Integrations
+- **RAG / Standards Finder**: Replace the simple string-overlap search with a real semantic vector index. Use the OpenRouter API key found in the `.env` file (or `OPENROUTER_API_KEY` env var) to generate embeddings (e.g., using `openai` SDK or direct HTTP requests) for document chunks. Parse uploaded PDF and TXT standards, chunk them, embed them, and query them semantically.
+- **AI Consultant Chat**: Remove all hardcoded/heuristic chat fallbacks. The assistant chat MUST use the OpenRouter/OpenAI API key to communicate with a real LLM (like `google/gemini-2.5-flash` or similar) to answer user questions, utilizing retrieved context from the RAG index and live pricing feed.
+- **Scraper Feed**: Keep the public Telegram scraping mechanism but ensure it scrapes live channels (like `https://t.me/s/steel_prices_iran` and others) rather than relying on local mock HTMLs in normal operation, while maintaining compatibility with the local HTML parser for testing.
+
+### R2. Complete Redesign of UI, UX, and Functionality
+- **Aesthetic**: Re-skin the entire Streamlit dashboard to use an **Industrial Steel & Slate** theme (Premium dark mode, brushed metal accents, neon green/cyan indicators, high contrast metrics).
+- **Layout & Organization**: Redesign the navigation and page tabs. Group features logically:
+  1. **Executive BI Dashboard**: High-level KPIs, beautiful charts (using Streamlit native charts or matplotlib with dark styles), and interactive filters.
+  2. **Technical Standards Explorer**: Clean PDF/TXT uploader, semantic query bar, and a sleek PDF/Markdown datasheet generator.
+  3. **Live Market Board & Arbitrage**: Live scraper configuration (up to 50 URLs), run-trigger, and an arbitrage analysis panel comparing internal sales prices with external market feeds.
+  4. **Co-Writing & Contract Room**: Standard contract drafter and sales roadmap compiler with real-time editing/previewing.
+- **Personalization**: Provide a personalized welcome header for a Steel Sales Manager, a workspace summary (e.g., total items in index, number of scraped feeds), and system status widget in the sidebar.
+
+## Acceptance Criteria
+
+### Backend & Integrations
+- [ ] RAG search retrieves passages semantically using real embeddings generated via OpenRouter API.
+- [ ] Interactive chat answers questions using a real LLM via OpenRouter, utilizing RAG context and live prices.
+- [ ] Live scraper successfully pulls from live public channels and caches to `live_prices.json`.
+- [ ] No hardcoded responses/heuristics remain in the chatbot.
+
+### UI & UX Design
+- [ ] Streamlit layout uses a dark steel/slate color scheme with high visual appeal (matching the "Industrial Steel & Slate" aesthetic).
+- [ ] The app dashboard layout is responsive, structured, and easy to navigate.
+- [ ] KPI cards use beautiful custom styling (borders, shadow hover effects, clear color contrast).
+
+### Verification
+- [ ] Running `python -m unittest tests/verify_app.py` passes all assertions successfully.
+- [ ] The Streamlit app runs cleanly via `streamlit run src/app.py` without start-up errors.

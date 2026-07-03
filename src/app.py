@@ -35,40 +35,44 @@ st.markdown("""
 <style>
     /* Main container background */
     .stApp {
-        background-color: #f7f9fc;
+        background-color: #0f131a;
+        color: #e2e8f0;
     }
     
     /* Header styling */
     .main-header {
         font-family: 'Outfit', 'Inter', sans-serif !important;
-        color: #0f172a !important;
+        color: #00f2fe !important;
         font-weight: 800 !important;
         margin-bottom: 5px !important;
+        text-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
     }
     .sub-header {
         font-family: 'Inter', sans-serif !important;
-        color: #475569 !important;
+        color: #00ff87 !important;
         font-size: 1.1rem !important;
         margin-bottom: 25px !important;
+        text-shadow: 0 0 10px rgba(0, 255, 135, 0.2);
     }
     
     /* Premium card container styling */
     .metric-card {
-        background-color: #ffffff;
+        background: linear-gradient(145deg, #1a202c, #121721);
         border-radius: 12px;
         padding: 20px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        border: 1px solid #e2e8f0;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), inset 0 1px 1px 0 rgba(255, 255, 255, 0.05);
+        border: 1px solid #2d3748;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     }
     .metric-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 12px 40px 0 rgba(0, 242, 254, 0.15);
+        border-color: #00f2fe;
     }
     .metric-label {
         font-size: 0.875rem;
         font-weight: 600;
-        color: #64748b;
+        color: #a0aec0;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         margin-bottom: 5px;
@@ -76,7 +80,8 @@ st.markdown("""
     .metric-value {
         font-size: 1.875rem;
         font-weight: 700;
-        color: #0f172a;
+        color: #00f2fe;
+        text-shadow: 0 0 8px rgba(0, 242, 254, 0.2);
     }
     .metric-change {
         font-size: 0.875rem;
@@ -84,7 +89,7 @@ st.markdown("""
         margin-top: 5px;
     }
     .metric-change.up {
-        color: #10b981;
+        color: #00ff87;
     }
     .metric-change.down {
         color: #ef4444;
@@ -97,17 +102,19 @@ st.markdown("""
         margin-bottom: 10px;
         max-width: 80%;
         line-height: 1.5;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
     }
     .chat-user {
-        background-color: #3b82f6;
-        color: white;
+        background-color: #005f73;
+        color: #ffffff;
         margin-left: auto;
         border-bottom-right-radius: 2px;
+        border: 1px solid #00f2fe;
     }
     .chat-bot {
-        background-color: #ffffff;
-        color: #1e293b;
-        border: 1px solid #e2e8f0;
+        background-color: #1e2530;
+        color: #e2e8f0;
+        border: 1px solid #4a5568;
         margin-right: auto;
         border-bottom-left-radius: 2px;
     }
@@ -117,7 +124,7 @@ st.markdown("""
 # App Title & Branding
 col_logo, col_title = st.columns([1, 11])
 with col_logo:
-    st.markdown("<h1 style='text-align: center; margin: 0; color: #3b82f6;'>⚙️</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; margin: 0; color: #00f2fe;'>⚙️</h1>", unsafe_allow_html=True)
 with col_title:
     st.markdown("<h1 class='main-header'>Iraj Sales AI Assistant</h1>", unsafe_allow_html=True)
     st.markdown("<p class='sub-header'>Production-ready Multi-Agent Command Center for Steel Rebar Manufacturing</p>", unsafe_allow_html=True)
@@ -150,7 +157,7 @@ if os.path.exists(mock_data_dir):
                     st.session_state.indexed_files.append(f_name)
 
 # Sidebar Navigation
-st.sidebar.markdown("<h3 style='color: #1e293b; margin-top: 0;'>Navigation</h3>", unsafe_allow_html=True)
+st.sidebar.markdown("<h3 style='color: #e2e8f0; margin-top: 0;'>Navigation</h3>", unsafe_allow_html=True)
 page = st.sidebar.radio(
     "Select Assistant Panel:",
     ["📊 Business Intelligence & KPIs", "📚 Steel Standards Finder (RAG)", "📈 Live Market Prices & Scraper", "💼 Sales Consultant & Contracts"]
@@ -315,13 +322,13 @@ elif page == "📚 Steel Standards Finder (RAG)":
             st.markdown(f"### Found {len(results)} relevant specification records:")
             for idx, res in enumerate(results[:5]):  # Show top 5
                 st.markdown(f"""
-                <div style="background-color: white; padding: 15px; border-radius: 8px; border-left: 5px solid #3b82f6; margin-bottom: 12px; border: 1px solid #e2e8f0; border-left: 4px solid #3b82f6;">
+                <div style="background-color: #161c24; padding: 15px; border-radius: 8px; border-left: 5px solid #00f2fe; margin-bottom: 12px; border: 1px solid #2d3748;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span style="font-weight: 700; color: #1e293b;">Match #{idx+1} (Relevance Score: {res['score']})</span>
-                        <span style="font-size: 0.8rem; background-color: #eff6ff; color: #1d4ed8; padding: 2px 8px; border-radius: 9999px; font-weight: 600;">{res['metadata']['standard']} Standard</span>
+                        <span style="font-weight: 700; color: #00f2fe;">Match #{idx+1} (Relevance Score: {res['score']})</span>
+                        <span style="font-size: 0.8rem; background-color: #0f131a; color: #00ff87; padding: 2px 8px; border-radius: 9999px; font-weight: 600;">{res['metadata']['standard']} Standard</span>
                     </div>
-                    <p style="color: #334155; font-size: 0.95rem; line-height: 1.5; margin-bottom: 8px;">{res['text']}</p>
-                    <div style="font-size: 0.8rem; color: #64748b;">
+                    <p style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.5; margin-bottom: 8px;">{res['text']}</p>
+                    <div style="font-size: 0.8rem; color: #94a3b8;">
                         <b>Source File:</b> {res['metadata']['source']} &nbsp;|&nbsp; <b>Page/Section:</b> {res['metadata']['page']}
                     </div>
                 </div>
@@ -451,10 +458,10 @@ elif page == "📈 Live Market Prices & Scraper":
             p_val = f"${item['price']:,} / t" if item['currency'] == 'USD' else f"{item['price']:,} {item['currency']}"
             with grid_cols[col_idx]:
                 st.markdown(f"""
-                <div class="metric-card" style="border-top: 4px solid #10b981;">
+                <div class="metric-card" style="border-top: 4px solid #00ff87;">
                     <div class="metric-label">t.me/s/{item['channel']}</div>
-                    <div class="metric-value" style="font-size: 1.5rem;">{p_val}</div>
-                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 10px;">Date: {item['date']}</div>
+                    <div class="metric-value" style="font-size: 1.5rem; color: #00f2fe;">{p_val}</div>
+                    <div style="font-size: 0.75rem; color: #a0aec0; margin-top: 10px;">Date: {item['date']}</div>
                 </div>
                 """, unsafe_allow_html=True)
         
@@ -530,7 +537,7 @@ elif page == "💼 Sales Consultant & Contracts":
         if st.button("Generate Contract Draft"):
             contract_txt = consultant.generate_contract_draft(buyer, seller, rebar_grade, tonnage, price_per_ton)
             st.markdown("#### Formatted Draft:")
-            st.markdown(f"<div style='background-color: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0;'>\n\n{contract_txt}\n\n</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='background-color: #161c24; padding: 25px; border-radius: 8px; border: 1px solid #2d3748; color: #e2e8f0;'>\n\n{contract_txt}\n\n</div>", unsafe_allow_html=True)
             st.download_button("Download Contract (Markdown)", contract_txt, file_name=f"Sales_Contract_{buyer.replace(' ', '_')}.md")
 
     # 2. Roadmap Tab
@@ -545,7 +552,7 @@ elif page == "💼 Sales Consultant & Contracts":
         if st.button("Compile Sales Roadmap"):
             roadmap_txt = consultant.generate_sales_roadmap(comp_name, target_mkt)
             st.markdown("#### Formatted Transformation Roadmap:")
-            st.markdown(f"<div style='background-color: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0;'>\n\n{roadmap_txt}\n\n</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='background-color: #161c24; padding: 25px; border-radius: 8px; border: 1px solid #2d3748; color: #e2e8f0;'>\n\n{roadmap_txt}\n\n</div>", unsafe_allow_html=True)
             st.download_button("Download Roadmap (Markdown)", roadmap_txt, file_name=f"Sales_Roadmap_{comp_name.replace(' ', '_')}.md")
 
     # 3. Interactive AI Chat Tab
@@ -572,11 +579,6 @@ elif page == "💼 Sales Consultant & Contracts":
                 
                 # AI response logic (Fallback RAG & BI-aware chat engine)
                 with st.spinner("AI is thinking..."):
-                    gemini_key = os.environ.get("GEMINI_API_KEY")
-                    openai_key = os.environ.get("OPENAI_API_KEY")
-                    
-                    response_content = ""
-                    
                     # Search RAG index to add context
                     context_passages = []
                     rag_results = rag.query_standards(user_msg)
@@ -601,56 +603,8 @@ elif page == "💼 Sales Consultant & Contracts":
                     Provide professional, highly detailed, context-aware sales insights.
                     """
 
-                    if gemini_key:
-                        try:
-                            from google import genai
-                            client = genai.Client(api_key=gemini_key)
-                            response = client.models.generate_content(
-                                model='gemini-2.5-flash',
-                                contents=f"{system_prompt}\n\nUser Question: {user_msg}"
-                            )
-                            response_content = response.text
-                        except Exception:
-                            gemini_key = None 
-
-                    if not response_content and openai_key:
-                        try:
-                            import openai
-                            client = openai.OpenAI(api_key=openai_key)
-                            response = client.chat.completions.create(
-                                model="gpt-4o-mini",
-                                messages=[
-                                    {"role": "system", "content": system_prompt},
-                                    {"role": "user", "content": user_msg}
-                                ]
-                            )
-                            response_content = response.choices[0].message.content
-                        except Exception:
-                            openai_key = None 
-
-                    openrouter_key = os.environ.get("OPENROUTER_API_KEY")
-                    if not openrouter_key:
-                        try:
-                            openrouter_key = st.secrets.get("OPENROUTER_API_KEY")
-                        except Exception:
-                            pass
-                    if not response_content and openrouter_key:
-                        try:
-                            import openai
-                            client = openai.OpenAI(
-                                base_url="https://openrouter.ai/api/v1",
-                                api_key=openrouter_key
-                            )
-                            response = client.chat.completions.create(
-                                model="google/gemini-2.5-flash",
-                                messages=[
-                                    {"role": "system", "content": system_prompt},
-                                    {"role": "user", "content": user_msg}
-                                ]
-                            )
-                            response_content = response.choices[0].message.content
-                        except Exception:
-                            pass 
+                    # Call decoupled sales consultant
+                    response_content = consultant.consult_sales(st.session_state.chat_history, system_prompt) or ""
 
                     # Rule-based / heuristics fallback if no API key or LLM library fails
                     if not response_content:

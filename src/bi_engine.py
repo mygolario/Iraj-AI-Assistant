@@ -270,38 +270,39 @@ def generate_charts(file_path: str) -> list[Figure]:
             continue
 
     if _HAS_MATPLOTLIB:
-        fig1 = plt.figure(figsize=(8, 5))
-        ax1 = fig1.add_subplot(111)
+        plt.style.use('dark_background')
+        fig1 = plt.figure(figsize=(8, 5), facecolor='#161c24')
+        ax1 = fig1.add_subplot(111, facecolor='#161c24')
         
-        fig2 = plt.figure(figsize=(8, 5))
-        ax2 = fig2.add_subplot(111)
+        fig2 = plt.figure(figsize=(8, 5), facecolor='#161c24')
+        ax2 = fig2.add_subplot(111, facecolor='#161c24')
         
         if grade_data:
             grades = list(grade_data.keys())
             tonnages = [grade_data[g]['tonnage'] for g in grades]
             revenues = [grade_data[g]['revenue'] for g in grades]
             
-            # Plot 1: Tonnage by Grade
-            ax1.bar(grades, tonnages, color='skyblue', edgecolor='black')
-            ax1.set_title('Total Tonnage by Rebar Grade')
-            ax1.set_xlabel('Rebar Grade')
-            ax1.set_ylabel('Tonnage (Tons)')
+            # Plot 1: Tonnage by Grade (neon cyan #00f2fe)
+            ax1.bar(grades, tonnages, color='#00f2fe', edgecolor='#161c24')
+            ax1.set_title('Total Tonnage by Rebar Grade', color='white')
+            ax1.set_xlabel('Rebar Grade', color='white')
+            ax1.set_ylabel('Tonnage (Tons)', color='white')
             ax1.tick_params(axis='x', rotation=30)
             fig1.tight_layout()
             
-            # Plot 2: Revenue by Grade
-            ax2.bar(grades, revenues, color='salmon', edgecolor='black')
-            ax2.set_title('Total Revenue by Rebar Grade')
-            ax2.set_xlabel('Rebar Grade')
-            ax2.set_ylabel('Revenue ($)')
+            # Plot 2: Revenue by Grade (neon green #00ff87)
+            ax2.bar(grades, revenues, color='#00ff87', edgecolor='#161c24')
+            ax2.set_title('Total Revenue by Rebar Grade', color='white')
+            ax2.set_xlabel('Rebar Grade', color='white')
+            ax2.set_ylabel('Revenue ($)', color='white')
             ax2.tick_params(axis='x', rotation=30)
             fig2.tight_layout()
         else:
             # Handle empty data
             ax1.text(0.5, 0.5, 'No converted sales data available', ha='center', va='center')
-            ax1.set_title('Total Tonnage by Rebar Grade')
+            ax1.set_title('Total Tonnage by Rebar Grade', color='white')
             ax2.text(0.5, 0.5, 'No converted sales data available', ha='center', va='center')
-            ax2.set_title('Total Revenue by Rebar Grade')
+            ax2.set_title('Total Revenue by Rebar Grade', color='white')
             
         return [fig1, fig2]
     else:

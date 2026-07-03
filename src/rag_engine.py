@@ -5,6 +5,34 @@ import re
 _DOCUMENT_INDEX = []
 _INDEXED_FILES = set()
 
+def get_embedding(text: str) -> list[float] | None:
+    api_key = os.environ.get("OPENROUTER_API_KEY")
+    if not api_key:
+        return None
+    try:
+        from openai import OpenAI
+        client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=api_key
+        )
+        response = client.embeddings.create(
+            model="openai/text-embedding-3-small",
+            input=text
+        )
+        return response.data[0].embedding
+    except Exception:
+        return None
+
+def cosine_similarity(v1: list[float], v2: list[float]) -> float:
+    if not v1 or not v2:
+        return 0.0
+    dot_product = sum(a * b for a, b in zip(v1, v2))
+    norm_a = sum(a * a for a in v1) ** 0.5
+    norm_b = sum(b * b for b in v2) ** 0.5
+    if norm_a == 0.0 or norm_b == 0.0:
+        return 0.0
+    return dot_product / (norm_a * norm_b)
+
 def index_document(file_path: str) -> bool:
     """
     Parses and indexes a steel standard file (text or PDF).
@@ -83,11 +111,13 @@ def index_document(file_path: str) -> bool:
             # Chunk by sentences or lines
             paragraphs = [p.strip() for p in txt.split('\n') if p.strip()]
             for p in paragraphs:
+                emb = get_embedding(p)
                 _DOCUMENT_INDEX.append({
                     "text": p,
                     "source": filename,
                     "page": page_num,
-                    "standard": _detect_standard(filename, p)
+                    "standard": _detect_standard(filename, p),
+                    "embedding": emb
                 })
     else:
         # Standard text file parsing
@@ -109,11 +139,13 @@ def index_document(file_path: str) -> bool:
         # Split into lines/paragraphs
         paragraphs = [p.strip() for p in content.split('\n') if p.strip()]
         for p in paragraphs:
+            emb = get_embedding(p)
             _DOCUMENT_INDEX.append({
                 "text": p,
                 "source": filename,
                 "page": 1,
-                "standard": _detect_standard(filename, p)
+                "standard": _detect_standard(filename, p),
+                "embedding": emb
             })
 
     _INDEXED_FILES.add(abs_path)
@@ -140,7 +172,34 @@ def query_standards(query_str: str) -> list[dict]:
     if not query_str or not query_str.strip():
         return []
 
-    # Clean the query
+    # Try embedding search first
+    query_emb = get_embedding(query_str)
+    has_embeddings = any(item.get("embedding") is not None for item in _DOCUMENT_INDEX)
+
+    if query_emb is not None and has_embeddings:
+        results = []
+        for item in _DOCUMENT_INDEX:
+            doc_emb = item.get("embedding")
+            if doc_emb is not None:
+                sim = cosine_similarity(query_emb, doc_emb)
+                # Filter out unrelated results with a robust threshold
+                if sim >= 0.35:
+                    results.append({
+                        "passage": item["text"],
+                        "text": item["text"],
+                        "source": item["source"],
+                        "page": item["page"],
+                        "score": round(sim, 2),
+                        "metadata": {
+                            "source": item["source"],
+                            "standard": item["standard"],
+                            "page": item["page"]
+                        }
+                    })
+        results.sort(key=lambda x: x["score"], reverse=True)
+        return results
+
+    # Silent fallback to keyword overlap query logic
     q = query_str.lower().strip()
     
     # Core synonyms mapping for steel standards semantic lookup

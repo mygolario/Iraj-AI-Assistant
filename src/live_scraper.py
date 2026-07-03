@@ -55,6 +55,10 @@ def scrape_channels(urls: list[str]) -> list[dict]:
     results = []
 
     for url in urls:
+        # Normalize URL to insert "/s/" if missing
+        if "t.me/" in url and "t.me/s/" not in url:
+            url = re.sub(r't\.me/([^/]+)', r't.me/s/\1', url)
+
         # Extract channel name from url
         # e.g., https://t.me/s/steel_prices_iran -> steel_prices_iran
         channel_name = "unknown_channel"
@@ -76,43 +80,31 @@ def scrape_channels(urls: list[str]) -> list[dict]:
                 html_content = response.read().decode('utf-8', errors='ignore')
         except Exception as e:
             # In case of network errors (404, etc.), skip or proceed
-            # Log warning or continue
             continue
 
-        # Extract message wrap blocks
-        # <div class="tgme_widget_message_wrap ..."> ... </div>
-        message_wraps = re.findall(r'<div class="tgme_widget_message_wrap[^"]*">(.*?)</div>\s*</div>\s*</div>', html_content, re.DOTALL)
-        if not message_wraps:
-            # Fallback regex in case of different closing structures
-            message_wraps = re.findall(r'<div class="tgme_widget_message_wrap.*?">(.*?)</div>\s*</div>\s*<div class="tgme_widget_message_wrap', html_content, re.DOTALL)
-            if not message_wraps:
-                message_wraps = re.findall(r'<div class="tgme_widget_message_wrap.*?">(.*?)<div class="tgme_widget_message_wrap', html_content, re.DOTALL)
-                if not message_wraps:
-                    # Let's find matches based on just tgme_widget_message_bubble or tgme_widget_message
-                    message_wraps = re.findall(r'<div class="tgme_widget_message">(.*?)</div>\s*</div>\s*</div>', html_content, re.DOTALL)
-
-        # If still no message wraps, check if we can split by tgme_widget_message_wrap
-        if not message_wraps:
-            parts = html_content.split('class="tgme_widget_message_wrap"')
-            if len(parts) > 1:
-                message_wraps = parts[1:]
-
-        for wrap in message_wraps:
-            # Extract message text
-            # <div class="tgme_widget_message_text ..."> ... </div>
-            text_match = re.search(r'class="[^"]*tgme_widget_message_text[^"]*"[^>]*>(.*?)</div>', wrap, re.DOTALL)
-            if not text_match:
-                text_match = re.search(r'tgme_widget_message_text.*?>(.*?)</div>', wrap, re.DOTALL)
-            
-            if not text_match:
+        # Extract message wrap blocks robustly
+        parts = html_content.split('tgme_widget_message_wrap')
+        for part in parts[1:]:
+            idx_text = part.find('tgme_widget_message_text')
+            idx_footer = part.find('tgme_widget_message_footer')
+            if idx_text == -1:
                 continue
 
-            raw_text = text_match.group(1)
+            if idx_footer != -1 and idx_text < idx_footer:
+                message_slice = part[idx_text:idx_footer]
+            else:
+                message_slice = part[idx_text:]
+
+            first_gt = message_slice.find('>')
+            if first_gt == -1:
+                continue
+
+            raw_text = message_slice[first_gt + 1:]
             text_cleaned = clean_html(raw_text)
 
-            # Extract datetime
+            # Extract datetime from part
             # <time class="time" datetime="2026-07-03T00:58:44+03:30">
-            date_match = re.search(r'<time[^>]*datetime="([^"]+)"', wrap)
+            date_match = re.search(r'<time[^>]*datetime="([^"]+)"', part)
             timestamp = date_match.group(1) if date_match else datetime.now().isoformat()
             date_str = timestamp.split('T')[0] if 'T' in timestamp else timestamp
 
