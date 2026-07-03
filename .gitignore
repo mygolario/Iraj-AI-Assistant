@@ -16,6 +16,10 @@ live_prices.json
 .env
 .env.*
 
+# Backend runtime artifacts
+backend/cache/
+backend/uploads/
+
 # OS files
 Thumbs.db
 ehthumbs.db

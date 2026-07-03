@@ -3,60 +3,132 @@
 Multi-AI-Agent System for a steel rebar manufacturing Sales Manager.
 
 ## Architecture
-The system consists of a Streamlit frontend and a Python-based backend that orchestrates 4 specialized agents:
-1. **BI & KPI Analyst Agent**:
-   - Inputs: Sales CSV/XLSX spreadsheets.
-   - Core Logic: Computes Revenue, Total Tonnage, Avg Price, and Conversion Rate (to 2 decimal places).
-   - Output: Interactive charts & metrics for Streamlit.
-2. **Standards & Datasheet Agent**:
-   - Inputs: Steel standard PDFs/text files, user queries.
-   - Core Logic: A local RAG pipeline that parses, indexes, and queries specifications (DIN, SAE, ASTM, JIS, GB/T, BS).
-   - Output: RAG-retrieved source passages and dynamic datasheet summaries.
-3. **Sales Consultant & Contract Agent**:
-   - Inputs: Co-writing chat instructions, strategy documents, contract drafts.
-   - Core Logic: Interacts with the LLM to generate sales roadmaps and legal agreements.
-   - Output: Formatted markdown or text drafts.
-4. **Live Price & News Agent**:
-   - Inputs: Up to 50 public Telegram web preview URLs (e.g. `t.me/s/...`) and websites.
-   - Core Logic: Configurable web scraper that extracts text and price indicators, parses currency/numeric values, and caches them.
-   - Output: Local JSON file feed (`live_prices.json`) displaying parsed prices and news.
+
+Full-stack application: **Next.js 16** (App Router) frontend + **FastAPI** Python backend.
+
+### Frontend (`frontend/`)
+- **Framework:** Next.js 16.2.10, React 19, Tailwind CSS v4
+- **Design System:** Aurora Indigo — dark glass morphism with electric indigo gradients
+- **UI:** shadcn-style primitives (custom), Framer Motion animations, Recharts, React Dropzone
+- **State:** localStorage persistence, no global store
+- **API Client:** Typed fetch wrapper + SSE streaming for chat
+
+### Backend (`backend/`)
+- **Framework:** FastAPI + Uvicorn
+- **AI Integration:** OpenRouter API (GPT-4o-mini via `openai` SDK)
+- **Core Engines:**
+  1. **BI Engine** — Parses sales CSV/XLSX, computes KPIs (revenue, tonnage, avg price, conversion rate)
+  2. **RAG Engine** — Indexes steel standard PDFs/texts, semantic search, datasheet generation
+  3. **Live Scraper** — Scrapes public Telegram channel previews, extracts price indicators
+  4. **Sales Consultant** — LLM-powered contract drafts and sales roadmaps (with streaming)
+  5. **Chat Copilot** — Context-aware AI assistant with RAG + live market price injection
+
+### Design System: Aurora Indigo
+- Near-black indigo void (`#08080d`)
+- Electric indigo-to-violet gradient accents
+- Glass panels with `backdrop-blur` and subtle borders
+- Cyan spark highlights for interactive elements
+- Dark-only — no light theme
 
 ## Code Layout
-- `/src/`
-  - `__init__.py`
-  - `bi_engine.py` - Core BI and KPI calculation algorithms
-  - `rag_engine.py` - RAG storage, parsing, indexing, and retrieval logic
-  - `sales_consultant.py` - Sales Consultant chat and contract generation
-  - `live_scraper.py` - Telegram and web scraping and parsing code
-  - `app.py` - Main Streamlit dashboard application
-- `/tests/`
-  - `generate_mock_data.py` - Generates mock sales spreadsheets, standards text, and Telegram preview HTMLs
-  - `verify_app.py` - Automated test suite for BI, RAG, and Scraper
 
-## Milestones
-| # | Name | Scope | Dependencies | Status | Conversation ID |
-|---|------|-------|-------------|--------|-----------------|
-| 1 | E2E Testing Track | Implement E2E test infra, `generate_mock_data.py`, `verify_app.py` skeleton/tests | None | DONE | 65d31d50-4296-4139-9260-af255c08b31a |
-| 2 | BI & KPI Engine | Implement `src/bi_engine.py` and verify math to 2 decimal places | M1 | PLANNED | TBD |
-| 3 | RAG & Standards | Implement `src/rag_engine.py` and local PDF/text parser and vector database/semantic lookup | M1 | PLANNED | TBD |
-| 4 | Scraper & Feed | Implement `src/live_scraper.py` for public Telegram channels, caching to JSON | M1 | PLANNED | TBD |
-| 5 | Sales Consultant | Implement `src/sales_consultant.py` for drafting contracts and roadmaps | M1 | PLANNED | TBD |
-| 6 | Streamlit Web UI | Implement `src/app.py` integrating all agents and file uploads | M2, M3, M4, M5 | PLANNED | TBD |
-| 7 | Adversarial Hardening | White-box analysis and Tier 5 adversarial testing of implementation | M6 | PLANNED | TBD |
+```
+Iraj-AI-Assistant/
+├── backend/
+│   ├── main.py                  # FastAPI app entry
+│   ├── config.py                # Env loading, paths, CORS
+│   ├── requirements.txt         # Python dependencies
+│   ├── .env                     # OPENROUTER_API_KEY (gitignored)
+│   ├── api/
+│   │   ├── schemas.py           # Pydantic request/response models
+│   │   └── routes/
+│   │       ├── bi.py            # POST /api/bi/kpis
+│   │       ├── chat.py          # POST /api/chat (SSE streaming)
+│   │       ├── market.py        # GET /prices, POST /scrape, /arbitrage
+│   │       ├── rag.py           # POST /index, /query, /datasheet, GET /state
+│   │       └── sales.py         # POST /contract, /roadmap
+│   ├── core/
+│   │   ├── bi_engine.py         # KPI computation from spreadsheets
+│   │   ├── live_scraper.py      # Telegram scraper + cache
+│   │   ├── rag_engine.py        # RAG indexing and retrieval
+│   │   └── sales_consultant.py  # LLM generation (non-streaming + SSE)
+│   ├── cache/                   # Runtime scraper cache (gitignored)
+│   └── uploads/                 # Uploaded standards (gitignored)
+├── frontend/
+│   ├── app/
+│   │   ├── globals.css          # Aurora Indigo design tokens
+│   │   ├── layout.tsx           # Root layout (fonts, providers)
+│   │   ├── providers.tsx        # Sonner toaster
+│   │   └── (app)/
+│   │       ├── layout.tsx       # AppShell (sidebar + header + ticker)
+│   │       ├── page.tsx         # Dashboard home
+│   │       ├── bi/page.tsx      # BI & KPIs
+│   │       ├── chat/page.tsx    # AI Chat Copilot
+│   │       ├── market/page.tsx  # Live Market Prices
+│   │       ├── sales/page.tsx   # Sales & Contracts
+│   │       └── standards/page.tsx # Standards Finder (RAG)
+│   ├── components/
+│   │   ├── layout/              # Sidebar, Header, PriceTicker, CopilotFab
+│   │   ├── ui/                  # Button, Card, StatCard, FileDropzone, Markdown
+│   │   └── feature/             # Page-level components per route
+│   ├── lib/
+│   │   ├── api.ts               # Typed API client + SSE stream generator
+│   │   ├── types.ts             # TypeScript interfaces
+│   │   └── utils.ts             # Helpers (cn, formatCurrency, downloadText)
+│   ├── package.json
+│   └── AGENTS.md                # Next.js 16 constraints for AI agents
+├── PROJECT.md
+├── opencode.json
+└── .gitignore
+```
 
-## Interface Contracts
-### `bi_engine.py`
-- `calculate_kpis(file_path: str) -> dict`: Returns `{"revenue": float, "tonnage": float, "avg_price": float, "conversion_rate": float}`.
-- `generate_charts(file_path: str) -> list[matplotlib.figure.Figure]`: Returns a list of figures for visualization.
+## API Endpoints
 
-### `rag_engine.py`
-- `index_document(file_path: str) -> bool`: Parses and indexes a standard file.
-- `query_standards(query_str: str) -> list[dict]`: Queries the index and returns matching passages with metadata.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health` | Backend health check |
+| POST | `/api/bi/kpis` | Upload sales spreadsheet → KPI + chart data |
+| POST | `/api/rag/index` | Index steel standard files into RAG |
+| POST | `/api/rag/query` | Semantic search across indexed standards |
+| POST | `/api/rag/datasheet` | Compile datasheet from RAG sources |
+| GET | `/api/rag/state` | Current index status (record count, files) |
+| GET | `/api/market/prices` | Cached live price feeds |
+| POST | `/api/market/scrape` | Run scraper on configured Telegram channels |
+| POST | `/api/market/arbitrage` | Compare internal avg price vs market index |
+| POST | `/api/sales/contract` | Generate contract draft via LLM |
+| POST | `/api/sales/roadmap` | Generate sales roadmap via LLM |
+| POST | `/api/chat` | Stream AI copilot response (SSE) |
 
-### `live_scraper.py`
-- `scrape_channels(urls: list[str]) -> list[dict]`: Scrapes Telegram channel previews, parses price data, and writes to `live_prices.json`.
-- `read_cached_prices() -> list[dict]`: Reads the cached scraper output.
+## Pages
 
-### `sales_consultant.py`
-- `generate_contract_draft(buyer: str, seller: str, rebar_grade: str, tonnage: float, price_per_ton: float) -> str`: Generates contract draft markdown.
-- `generate_sales_roadmap(company_name: str, target_market: str) -> str`: Generates a sales roadmap markdown.
+| Route | Feature |
+|-------|---------|
+| `/` | Dashboard — Bento command center (BI summary, prices preview, quick search, calculator) |
+| `/bi` | BI & KPIs — Upload spreadsheet, KPI cards, tonnage/revenue charts, records table |
+| `/standards` | Standards Finder — Index standards, semantic query, datasheet generator |
+| `/market` | Live Market Prices — Scraper config, pricing board, arbitrage check, deal calculator |
+| `/sales` | Sales & Contracts — Contract drafter + sales roadmap generator (tabbed) |
+| `/chat` | AI Chat Copilot — SSE streaming chat with RAG + market context injection |
+
+## Running
+
+### Backend
+```bash
+cd backend
+pip install -r requirements.txt
+cp .env.example .env  # Set OPENROUTER_API_KEY
+uvicorn main:app --port 8000
+```
+
+### Frontend
+```bash
+cd frontend
+npm install
+NEXT_PUBLIC_API_URL=http://localhost:8000 npm run dev
+```
+
+## Follow-ups
+- [ ] Rewrite backend tests for new FastAPI API structure
+- [ ] Add persistent vector DB (Qdrant/ChromaDB) for production RAG
+- [ ] Add authentication and multi-user support
+- [ ] Light theme toggle

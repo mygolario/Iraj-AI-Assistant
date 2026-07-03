@@ -102,3 +102,52 @@ Integrity mode: benchmark
 ### Verification
 - [ ] Running `python -m unittest tests/verify_app.py` passes all assertions successfully.
 - [ ] The Streamlit app runs cleanly via `streamlit run src/app.py` without start-up errors.
+
+## Follow-up — 2026-07-03T10:43:12Z
+
+# Teamwork Project Prompt — Draft
+
+Production-ready steel rebar manufacturing Sales Manager Assistant: Redesign the UI/UX using the "Neon Peach & Ultraviolet" theme, interactive charts, Bento Box homepage, split-screen Copilot chat, and a scrolling price ticker.
+
+Working directory: d:/Ario Vibe Coding/Iraj-AI-Assistant
+Integrity mode: benchmark
+
+## Requirements
+
+### R1. Complete UI/UX Redesign: Neon Peach & Ultraviolet Theme
+- **Color Palette & Theme**: Update the Streamlit application to a gorgeous glassmorphism style using a deep dark indigo background (`#0e0b1e`), neon sunset peach (`#FF7E5F`), intense coral (`#FF5E62`), and royal violet (`#8B5CF6`) accents. Use custom CSS overlays to create frosted glass panels (`background: rgba(22, 19, 43, 0.6); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08);`) with smooth gradients and hover transitions.
+- **Bento Box Workspace Home**: Implement a personalized Bento Box welcome dashboard at the top/home of the application. Include:
+  - A dynamic welcome header for the Sales Manager.
+  - A grid of interactive quick-stats widgets (e.g. total indexed documents in RAG, scraper cache size).
+  - High-impact warning cards for live pricing deviations (arbitrage alerts).
+- **Navigation**: Replace standard sidebar navigation with a floating, modern selector tab list.
+
+### R2. Interactive Business Intelligence Charts
+- **Interactive Visualizations**: Replace static Matplotlib chart images in the dashboard with responsive Streamlit native interactive charts (`st.bar_chart` or `st.area_chart`). Style the charts' colors to use sunset peach (`#FF7E5F`) and royal violet (`#8B5CF6`) themes.
+- **Matplotlib Compatibility**: Style the Matplotlib figures generated in `bi_engine.py` to use dark backgrounds and white text so existing test suites in `tests/verify_app.py` pass successfully.
+
+### R3. Split-Screen AI Chat Copilot
+- **Copilot Layout**: Redesign the "Sales Consultant" chat tab into a split-screen layout:
+  - **Left Panel**: Displays retrieved standards context and live pricing benchmarks.
+  - **Right Panel**: Floating scrollable chat window with message history and input.
+- **Bubbles**: Apply sunset peach and violet color styling to chat messages.
+
+### R4. Scrolling Price Ticker & Deal Calculator
+- **Price Ticker**: Build a horizontal scrolling marquee showing real-time price feeds from public Telegram channels.
+- **Interactive Calculator**: Create a profitability calculator in the market board tab where managers can model deal prices, volumes, and custom grades against live-scraped benchmarks.
+
+## Acceptance Criteria
+
+### Aesthetic & UI Design
+- [ ] Theme uses the "Neon Peach & Ultraviolet" color palette with responsive glassmorphism styles.
+- [ ] Bento Box greeting page is functional.
+- [ ] Live scrolling price ticker runs smoothly.
+- [ ] Chat layout is split-screen with left-panel context extraction and styled bubbles.
+
+### Interactive Functionality
+- [ ] Sales KPIs are rendered using Streamlit native interactive charts.
+- [ ] Pricing/arbitrage calculator correctly computes profit margins.
+
+### Verification
+- [ ] Running `python -m unittest tests/verify_app.py` and `tests/adversarial_bi_tests.py` passes all assertions successfully.
+- [ ] Streamlit application starts clean via `streamlit run src/app.py`.

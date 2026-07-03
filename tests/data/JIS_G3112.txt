@@ -1,4 +1,0 @@
-JIS G3112 Japanese Industrial Standard.
-Steel bars for concrete reinforcement.
-Grade SD390 specifies yield points between 390 and 510 N/mm².
-Minimum tensile strength is 560 N/mm².

@@ -1,5 +1,0 @@
-DIN 488 Reinforcing Steels - Part 1.
-Scope: Weldable reinforcing steel Grade B500B specifications.
-Yield Strength: Grade B500B specifies yield point (Re) of at least 500 MPa.
-Tensile/Yield Ratio: Rm / Re ratio must be at least 1.08.
-Elongation: Total elongation at maximum force (Agt) >= 5.0%.
