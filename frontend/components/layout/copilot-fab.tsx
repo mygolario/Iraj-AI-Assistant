@@ -1,13 +1,19 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
+import { Link } from "@/i18n/navigation";
+import { usePathname } from "@/i18n/navigation";
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 
 export function CopilotFab() {
+  const t = useTranslations();
   const pathname = usePathname();
-  if (pathname.startsWith("/chat")) return null;
+  const locale = useLocale();
+  const isChat =
+    pathname.startsWith(`/${locale}/chat`) || pathname === "/chat";
+  if (isChat) return null;
 
   return (
     <motion.div
@@ -23,7 +29,7 @@ export function CopilotFab() {
         <span className="flex size-7 items-center justify-center rounded-full bg-white/20">
           <Sparkles className="size-4" />
         </span>
-        Ask AI Copilot
+        {t("fab.ask_copilot")}
       </Link>
     </motion.div>
   );

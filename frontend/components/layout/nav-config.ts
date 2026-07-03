@@ -8,6 +8,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+type TFunction = (key: string, values?: Record<string, string | number | Date>) => string;
+
 export interface NavItem {
   label: string;
   href: string;
@@ -15,41 +17,43 @@ export interface NavItem {
   description: string;
 }
 
-export const NAV_ITEMS: NavItem[] = [
-  {
-    label: "Dashboard",
-    href: "/",
-    icon: LayoutDashboard,
-    description: "Command center overview",
-  },
-  {
-    label: "BI & KPIs",
-    href: "/bi",
-    icon: BarChart3,
-    description: "Sales analytics & performance",
-  },
-  {
-    label: "Standards",
-    href: "/standards",
-    icon: Library,
-    description: "RAG search & datasheets",
-  },
-  {
-    label: "Live Market",
-    href: "/market",
-    icon: LineChart,
-    description: "Pricing feeds & arbitrage",
-  },
-  {
-    label: "Sales & Contracts",
-    href: "/sales",
-    icon: Briefcase,
-    description: "Contracts & roadmaps",
-  },
-  {
-    label: "AI Copilot",
-    href: "/chat",
-    icon: Sparkles,
-    description: "Full-screen chat assistant",
-  },
-];
+export function getNavItems(t: TFunction): NavItem[] {
+  return [
+    {
+      label: t("nav.dashboard"),
+      href: "/",
+      icon: LayoutDashboard,
+      description: t("nav.dashboard_desc"),
+    },
+    {
+      label: t("nav.bi"),
+      href: "/bi",
+      icon: BarChart3,
+      description: t("nav.bi_desc"),
+    },
+    {
+      label: t("nav.standards"),
+      href: "/standards",
+      icon: Library,
+      description: t("nav.standards_desc"),
+    },
+    {
+      label: t("nav.live_market"),
+      href: "/market",
+      icon: LineChart,
+      description: t("nav.live_market_desc"),
+    },
+    {
+      label: t("nav.sales_contracts"),
+      href: "/sales",
+      icon: Briefcase,
+      description: t("nav.sales_contracts_desc"),
+    },
+    {
+      label: t("nav.ai_copilot"),
+      href: "/chat",
+      icon: Sparkles,
+      description: t("nav.ai_copilot_desc"),
+    },
+  ];
+}

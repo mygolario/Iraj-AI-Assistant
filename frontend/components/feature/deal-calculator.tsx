@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { Calculator, TrendingUp, TrendingDown, Wallet, Percent, DollarSign } from "lucide-react";
 import { cn, formatCurrency, formatPercent } from "@/lib/utils";
@@ -20,14 +21,8 @@ function compute(t: number, sp: number, pc: number, ov: number): Result {
   return { revenue, grossProfit, netProfit, margin };
 }
 
-const FIELDS = [
-  { key: "tonnage", label: "Tonnage", suffix: "t", icon: Calculator },
-  { key: "salePrice", label: "Sale Price", suffix: "/t", icon: DollarSign },
-  { key: "purchaseCost", label: "Purchase Cost", suffix: "/t", icon: Wallet },
-  { key: "overhead", label: "Fixed Overheads", suffix: "", icon: Percent },
-] as const;
-
 export function DealCalculator({ compact = false }: { compact?: boolean }) {
+  const t = useTranslations();
   const [vals, setVals] = React.useState({
     tonnage: 100,
     salePrice: 600,
@@ -38,17 +33,24 @@ export function DealCalculator({ compact = false }: { compact?: boolean }) {
   const r = compute(vals.tonnage, vals.salePrice, vals.purchaseCost, vals.overhead);
   const profitable = r.netProfit >= 0;
 
+  const fields = [
+    { key: "tonnage" as const, label: t("calculator.tonnage"), suffix: "t", icon: Calculator },
+    { key: "salePrice" as const, label: t("calculator.sale_price"), suffix: "/t", icon: DollarSign },
+    { key: "purchaseCost" as const, label: t("calculator.purchase_cost"), suffix: "/t", icon: Wallet },
+    { key: "overhead" as const, label: t("calculator.fixed_overheads"), suffix: "", icon: Percent },
+  ];
+
   const stats = [
-    { label: "Total Revenue", value: formatCurrency(r.revenue), icon: DollarSign, tone: "neutral" },
-    { label: "Gross Profit", value: formatCurrency(r.grossProfit), icon: TrendingUp, tone: r.grossProfit >= 0 ? "up" : "down" },
-    { label: "Net Profit", value: formatCurrency(r.netProfit), icon: r.netProfit >= 0 ? TrendingUp : TrendingDown, tone: profitable ? "up" : "down" },
-    { label: "Net Margin", value: formatPercent(r.margin), icon: Percent, tone: profitable ? "up" : "down" },
+    { label: t("calculator.total_revenue"), value: formatCurrency(r.revenue), icon: DollarSign, tone: "neutral" },
+    { label: t("calculator.gross_profit"), value: formatCurrency(r.grossProfit), icon: TrendingUp, tone: r.grossProfit >= 0 ? "up" : "down" },
+    { label: t("calculator.net_profit"), value: formatCurrency(r.netProfit), icon: r.netProfit >= 0 ? TrendingUp : TrendingDown, tone: profitable ? "up" : "down" },
+    { label: t("calculator.net_margin"), value: formatPercent(r.margin), icon: Percent, tone: profitable ? "up" : "down" },
   ];
 
   return (
     <div className="flex flex-col gap-4">
       <div className={cn("grid gap-3", compact ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-4")}>
-        {FIELDS.map((f) => (
+        {fields.map((f) => (
           <label key={f.key} className="flex flex-col gap-1.5">
             <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
               <f.icon className="size-3.5" />
@@ -123,9 +125,7 @@ export function DealCalculator({ compact = false }: { compact?: boolean }) {
         )}
       >
         {profitable ? <TrendingUp className="size-4" /> : <TrendingDown className="size-4" />}
-        {profitable
-          ? "Profitable deal — healthy margin."
-          : "This deal runs at a loss at the current inputs."}
+        {profitable ? t("calculator.profitable") : t("calculator.loss")}
       </div>
     </div>
   );

@@ -11,7 +11,7 @@ from core.sales_consultant import LLMError, consult_sales_stream
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 
-def _build_system_prompt(user_msg: str) -> str:
+def _build_system_prompt(user_msg: str, language: str = "en") -> str:
     context_parts = []
 
     rag_results = query_standards(user_msg)
@@ -33,11 +33,19 @@ def _build_system_prompt(user_msg: str) -> str:
 
     context_block = "\n\n".join(context_parts) if context_parts else "(no live context available)"
 
+    lang_instruction = (
+        "Respond in Farsi (Persian). Keep technical terms "
+        "(ASTM, DIN, JIS, SAE, GB/T, rebar, tonnage, yield strength, etc.) in English."
+        if language == "fa"
+        else "Respond in English."
+    )
+
     return (
         "You are Iraj Sales AI Copilot, assisting the Sales Manager of a steel rebar manufacturer. "
         "Provide professional, detailed, context-aware sales insights. "
         "When relevant, reference the standards and live market data below. "
         "If a question is outside your scope, say so clearly rather than guessing.\n\n"
+        f"{lang_instruction}\n\n"
         f"{context_block}"
     )
 
@@ -48,7 +56,7 @@ async def chat(req: ChatRequest, request: Request):
     last_user = next(
         (m["content"] for m in reversed(history) if m["role"] == "user"), ""
     )
-    system_prompt = req.system_prompt or _build_system_prompt(last_user)
+    system_prompt = req.system_prompt or _build_system_prompt(last_user, req.language)
 
     async def event_stream():
         try:

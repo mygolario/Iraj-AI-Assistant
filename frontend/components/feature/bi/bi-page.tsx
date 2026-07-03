@@ -21,6 +21,7 @@ import {
   BarChart3,
   Loader2,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import type { BiResult } from "@/lib/types";
 import { cn, formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
@@ -68,6 +69,7 @@ function ChartTooltip({
 }
 
 export function BiPage() {
+  const t = useTranslations();
   const [result, setResult] = React.useState<BiResult | null>(null);
   const [loading, setLoading] = React.useState(false);
 
@@ -83,11 +85,11 @@ export function BiPage() {
       } catch {
         /* ignore */
       }
-      toast.success("Sales sheet processed", {
-        description: `${res.rows.length} records · ${res.byGrade.length} grades`,
+      toast.success(t("bi.processed"), {
+        description: t("bi.processed_desc", { records: String(res.rows.length), grades: String(res.byGrade.length) }),
       });
     } catch (e) {
-      toast.error("Failed to process file", { description: (e as Error).message });
+      toast.error(t("bi.process_failed"), { description: (e as Error).message });
     } finally {
       setLoading(false);
     }
@@ -100,8 +102,8 @@ export function BiPage() {
       <FileDropzone
         accept={{ "text/csv": [".csv"], "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"] }}
         onFiles={handleUpload}
-        label="Upload sales log (CSV or XLSX)"
-        hint="Columns: Date, Customer, Rebar Grade, Tonnage, Unit Price, Status, Conversion"
+        label={t("bi.upload_label")}
+        hint={t("bi.upload_hint")}
       />
 
       {loading && (
@@ -115,10 +117,10 @@ export function BiPage() {
       {!loading && k && (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Total Revenue" value={formatCurrency(k.revenue)} icon={DollarSign} tone="primary" delay={0} sub="Converted deals" />
-            <StatCard label="Volume Sold" value={formatNumber(k.tonnage, " t")} icon={Layers} tone="secondary" delay={60} sub="Converted tonnage" />
-            <StatCard label="Avg Price" value={formatCurrency(k.avg_price)} icon={Tag} tone="accent" delay={120} sub="Weighted mean" />
-            <StatCard label="Conversion" value={formatPercent(k.conversion_rate)} icon={Percent} tone="success" delay={180} sub="Closed / inquiries" />
+            <StatCard label={t("bi.total_revenue")} value={formatCurrency(k.revenue)} icon={DollarSign} tone="primary" delay={0} sub={t("bi.total_revenue_sub")} />
+            <StatCard label={t("bi.volume_sold")} value={formatNumber(k.tonnage, " t")} icon={Layers} tone="secondary" delay={60} sub={t("bi.volume_sold_sub")} />
+            <StatCard label={t("bi.avg_price")} value={formatCurrency(k.avg_price)} icon={Tag} tone="accent" delay={120} sub={t("bi.avg_price_sub")} />
+            <StatCard label={t("bi.conversion")} value={formatPercent(k.conversion_rate)} icon={Percent} tone="success" delay={180} sub={t("bi.conversion_sub")} />
           </div>
 
           {result!.byGrade.length > 0 && (
@@ -126,7 +128,7 @@ export function BiPage() {
               <div className="glass rounded-2xl p-5">
                 <div className="mb-4 flex items-center gap-2">
                   <BarChart3 className="size-4 text-primary" />
-                  <h3 className="font-display text-sm font-semibold">Tonnage by Grade</h3>
+                  <h3 className="font-display text-sm font-semibold">{t("bi.tonnage_by_grade")}</h3>
                 </div>
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={result!.byGrade} margin={{ top: 4, right: 8, bottom: 4, left: -12 }}>
@@ -146,7 +148,7 @@ export function BiPage() {
               <div className="glass rounded-2xl p-5">
                 <div className="mb-4 flex items-center gap-2">
                   <BarChart3 className="size-4 text-secondary" />
-                  <h3 className="font-display text-sm font-semibold">Revenue by Grade</h3>
+                  <h3 className="font-display text-sm font-semibold">{t("bi.revenue_by_grade")}</h3>
                 </div>
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={result!.byGrade} margin={{ top: 4, right: 8, bottom: 4, left: -12 }}>
@@ -169,16 +171,16 @@ export function BiPage() {
             <div className="glass rounded-2xl p-5">
               <div className="mb-4 flex items-center gap-2">
                 <Table2 className="size-4 text-accent" />
-                <h3 className="font-display text-sm font-semibold">Sales Records</h3>
+                <h3 className="font-display text-sm font-semibold">{t("bi.sales_records")}</h3>
                 <span className="ml-auto text-xs text-muted-foreground">
-                  {result!.rows.length} records
+                  {result!.rows.length} {t("common.records")}
                 </span>
               </div>
               <div className="max-h-96 overflow-auto rounded-xl border border-white/[0.06]">
                 <table className="w-full text-left text-xs">
                   <thead className="sticky top-0 bg-[#0c0c14]/95 backdrop-blur">
                     <tr className="text-muted-foreground">
-                      {["Date", "Customer", "Grade", "Tonnage", "Unit Price", "Status"].map(
+                      {[t("common.date"), t("common.customer"), t("common.grade"), t("common.tonnage"), t("common.unit_price"), t("common.status")].map(
                         (h) => (
                           <th key={h} className="px-3 py-2.5 font-semibold uppercase tracking-wide">
                             {h}
@@ -233,7 +235,7 @@ export function BiPage() {
         <div className="glass flex flex-col items-center gap-3 rounded-2xl py-16 text-center">
           <Loader2 className="size-7 text-muted-foreground/40" />
           <p className="text-sm text-muted-foreground">
-            Upload a sales sheet to compute KPIs, charts, and a records preview.
+            {t("bi.empty_state")}
           </p>
         </div>
       )}

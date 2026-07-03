@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useDropzone } from "react-dropzone";
+import { useTranslations } from "next-intl";
 import { UploadCloud, FileSpreadsheet } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -9,7 +10,7 @@ export function FileDropzone({
   accept,
   multiple = false,
   onFiles,
-  label = "Drop file here or click to upload",
+  label,
   hint,
 }: {
   accept: Record<string, string[]>;
@@ -18,6 +19,7 @@ export function FileDropzone({
   label?: string;
   hint?: string;
 }) {
+  const t = useTranslations();
   const [selected, setSelected] = React.useState<string[]>([]);
 
   const onDrop = React.useCallback(
@@ -56,11 +58,11 @@ export function FileDropzone({
       {selected.length ? (
         <div className="text-sm">
           <p className="font-semibold text-foreground">{selected.join(", ")}</p>
-          <p className="mt-0.5 text-xs text-success">Ready · drop another to replace</p>
+          <p className="mt-0.5 text-xs text-success">{t("dropzone.ready")}</p>
         </div>
       ) : (
         <div className="text-sm">
-          <p className="font-medium text-foreground">{label}</p>
+          <p className="font-medium text-foreground">{label ?? t("dropzone.default_label")}</p>
           {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
         </div>
       )}

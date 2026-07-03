@@ -97,6 +97,7 @@ export interface ChatMessage {
 export interface ChatRequest {
   messages: ChatMessage[];
   system_prompt?: string;
+  language?: string;
 }
 
 export interface SystemHealth {

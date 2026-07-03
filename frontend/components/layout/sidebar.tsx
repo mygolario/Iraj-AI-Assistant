@@ -1,14 +1,16 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
+import { Link, usePathname } from "@/i18n/navigation";
 import * as Dialog from "@radix-ui/react-dialog";
 import { PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
-import { NAV_ITEMS } from "./nav-config";
+import { getNavItems } from "./nav-config";
 import { cn } from "@/lib/utils";
 
 function Brand({ collapsed }: { collapsed: boolean }) {
+  const t = useTranslations();
   return (
     <Link href="/" className="flex items-center gap-3 px-2 py-1">
       <div className="relative flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary shadow-[0_4px_14px_-4px_rgba(99,102,241,0.7)]">
@@ -18,10 +20,10 @@ function Brand({ collapsed }: { collapsed: boolean }) {
       {!collapsed && (
         <div className="flex flex-col leading-none">
           <span className="font-display text-sm font-bold tracking-tight text-foreground">
-            Iraj Sales AI
+            {t("sidebar.brand")}
           </span>
           <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Command Center
+            {t("sidebar.subtitle")}
           </span>
         </div>
       )}
@@ -36,12 +38,19 @@ function NavLinks({
   collapsed: boolean;
   onNavigate?: () => void;
 }) {
+  const t = useTranslations();
   const pathname = usePathname();
+  const locale = useLocale();
+  const items = getNavItems(t);
+
   return (
     <nav className="flex flex-col gap-1">
-      {NAV_ITEMS.map((item) => {
+      {items.map((item) => {
+        const href = item.href;
         const active =
-          item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+          href === "/"
+            ? pathname === `/${locale}` || pathname === "/"
+            : pathname.startsWith(`/${locale}${href}`) || pathname.startsWith(href);
         const Icon = item.icon;
         return (
           <Link
@@ -83,6 +92,7 @@ export function Sidebar({
   collapsed: boolean;
   onToggleCollapse: () => void;
 }) {
+  const t = useTranslations();
   return (
     <aside
       className={cn(
@@ -106,7 +116,7 @@ export function Sidebar({
           ) : (
             <>
               <PanelLeftClose className="size-[18px]" />
-              <span>Collapse</span>
+              <span>{t("common.collapse")}</span>
             </>
           )}
         </button>

@@ -39,3 +39,4 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     messages: list[ChatMessage]
     system_prompt: str | None = None
+    language: str = "en"

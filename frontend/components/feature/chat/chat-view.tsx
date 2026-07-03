@@ -11,20 +11,28 @@ import {
   User,
   Bot,
 } from "lucide-react";
-import { api, INITIAL_CHAT } from "@/lib/api";
+import { useTranslations, useLocale } from "next-intl";
+import { api } from "@/lib/api";
 import type { ChatMessage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Markdown } from "@/components/ui/markdown";
 
-const SUGGESTIONS = [
-  "What are the yield strength specs for ASTM A615 Grade 60?",
-  "Summarize the latest live market prices",
-  "Draft a sales strategy for Southern regional contractors",
-  "How do I improve my deal profit margins?",
-];
-
 export function ChatView() {
-  const [messages, setMessages] = React.useState<ChatMessage[]>(INITIAL_CHAT);
+  const t = useTranslations("chat");
+  const tc = useTranslations("common");
+  const locale = useLocale();
+
+  const initialChat: ChatMessage[] = React.useMemo(
+    () => [{ role: "assistant" as const, content: locale === "fa" ? t("initial_message_fa") : t("initial_message_en") }],
+    [locale, t],
+  );
+
+  const suggestions = React.useMemo(
+    () => [t("suggestion_1"), t("suggestion_2"), t("suggestion_3"), t("suggestion_4")],
+    [t],
+  );
+
+  const [messages, setMessages] = React.useState<ChatMessage[]>(initialChat);
   const [input, setInput] = React.useState("");
   const [streaming, setStreaming] = React.useState(false);
   const abortRef = React.useRef<AbortController | null>(null);
@@ -66,7 +74,7 @@ export function ChatView() {
 
     try {
       let acc = "";
-      for await (const token of api.chat.stream({ messages: history }, controller.signal)) {
+      for await (const token of api.chat.stream({ messages: history, language: locale }, controller.signal)) {
         acc += token;
         setMessages((prev) => {
           const next = [...prev];
@@ -79,7 +87,7 @@ export function ChatView() {
           const next = [...prev];
           next[next.length - 1] = {
             role: "assistant",
-            content: "I couldn't generate a response. Please try again.",
+            content: t("empty_response"),
           };
           return next;
         });
@@ -90,11 +98,11 @@ export function ChatView() {
           const next = [...prev];
           next[next.length - 1] = {
             role: "assistant",
-            content: `⚠️ Error: ${(e as Error).message}`,
+            content: `${tc("error_prefix")}${(e as Error).message}`,
           };
           return next;
         });
-        toast.error("Copilot error", { description: (e as Error).message });
+        toast.error(t("error_title"), { description: (e as Error).message });
       } else {
         setMessages((prev) => {
           const next = [...prev];
@@ -114,7 +122,7 @@ export function ChatView() {
   const stop = () => abortRef.current?.abort();
 
   const clear = () => {
-    setMessages(INITIAL_CHAT);
+    setMessages(initialChat);
     localStorage.removeItem("iraj-chat");
   };
 
@@ -126,9 +134,9 @@ export function ChatView() {
             <Sparkles className="size-4 text-white" />
           </div>
           <div>
-            <h2 className="font-display text-sm font-bold leading-none">AI Sales Copilot</h2>
+            <h2 className="font-display text-sm font-bold leading-none">{t("title")}</h2>
             <span className="text-[11px] text-muted-foreground">
-              Context-aware · RAG + live prices injected
+              {t("subtitle")}
             </span>
           </div>
         </div>
@@ -137,7 +145,7 @@ export function ChatView() {
           className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
         >
           <Trash2 className="size-3.5" />
-          Clear
+          {tc("clear")}
         </button>
       </div>
 
@@ -197,7 +205,7 @@ export function ChatView() {
 
       {messages.length <= 1 && (
         <div className="flex flex-wrap gap-2">
-          {SUGGESTIONS.map((s) => (
+          {suggestions.map((s) => (
             <button
               key={s}
               onClick={() => send(s)}
@@ -226,7 +234,7 @@ export function ChatView() {
             }
           }}
           rows={1}
-          placeholder="Ask about specs, prices, margins, or strategy…"
+          placeholder={t("placeholder")}
           className="max-h-32 min-h-[2.5rem] flex-1 resize-none bg-transparent px-2 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
         />
         {streaming ? (

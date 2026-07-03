@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -27,6 +28,8 @@ const STATUS_META = {
 };
 
 export function MarketPage() {
+  const t = useTranslations();
+
   const [urls, setUrls] = React.useState<string>(() => {
     try {
       const saved = localStorage.getItem("iraj-scraper-urls");
@@ -61,7 +64,7 @@ export function MarketPage() {
       .filter(Boolean)
       .slice(0, 50);
     localStorage.setItem("iraj-scraper-urls", JSON.stringify(list));
-    toast.success(`Saved ${list.length} feed source(s)`);
+    toast.success(t("market.saved_feeds", { count: list.length }));
   };
 
   const runScraper = async () => {
@@ -71,19 +74,19 @@ export function MarketPage() {
       .filter(Boolean)
       .slice(0, 50);
     if (!list.length) {
-      toast.error("Add at least one Telegram preview URL first");
+      toast.error(t("market.add_url_error"));
       return;
     }
     localStorage.setItem("iraj-scraper-urls", JSON.stringify(list));
     setScraping(true);
     try {
       const res = await api.market.scrape(list);
-      toast.success(`Scraped ${res.count} posts`, {
-        description: res.items.filter((i) => i.price != null).length + " priced",
+      toast.success(t("market.scraped_posts", { count: res.count }), {
+        description: t("common.priced", { count: res.items.filter((i) => i.price != null).length }),
       });
       await loadPrices();
     } catch (e) {
-      toast.error("Scrape failed", { description: (e as Error).message });
+      toast.error(t("market.scrape_failed"), { description: (e as Error).message });
     } finally {
       setScraping(false);
     }
@@ -97,8 +100,8 @@ export function MarketPage() {
       /* ignore */
     }
     if (!bi?.kpis?.avg_price) {
-      toast.error("Upload a sales sheet in BI first", {
-        description: "Arbitrage needs your average sale price.",
+      toast.error(t("market.upload_bi_first"), {
+        description: t("market.arbitrage_needs_bi"),
       });
       return;
     }
@@ -107,7 +110,7 @@ export function MarketPage() {
     try {
       setArbitrage(await api.market.arbitrage(bi.kpis.avg_price));
     } catch (e) {
-      toast.error("Arbitrage check failed", { description: (e as Error).message });
+      toast.error(t("market.arbitrage_failed"), { description: (e as Error).message });
     } finally {
       setArbitrageLoading(false);
     }
@@ -121,9 +124,9 @@ export function MarketPage() {
         <div className="mb-3 flex items-center justify-between">
           <span className="flex items-center gap-2 text-sm font-semibold">
             <Settings2 className="size-4 text-accent" />
-            Scraper Source Feeds
+            {t("market.scraper_feeds")}
           </span>
-          <span className="text-[10px] text-muted-foreground">up to 50 channels</span>
+          <span className="text-[10px] text-muted-foreground">{t("market.up_to_channels")}</span>
         </div>
         <textarea
           value={urls}
@@ -152,7 +155,7 @@ export function MarketPage() {
 
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="font-display text-sm font-semibold">Pricing Board</h3>
+          <h3 className="font-display text-sm font-semibold">{t("market.pricing_board")}</h3>
           <button
             onClick={loadPrices}
             className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
@@ -171,7 +174,7 @@ export function MarketPage() {
           <div className="glass flex flex-col items-center gap-3 rounded-2xl py-12 text-center">
             <Newspaper className="size-7 text-muted-foreground/50" />
             <p className="text-sm text-muted-foreground">
-              No priced entries. Run the scraper to fetch live feeds.
+              {t("market.no_priced")}
             </p>
           </div>
         ) : (
@@ -207,14 +210,14 @@ export function MarketPage() {
         <div className="glass rounded-2xl p-5">
           <div className="mb-3 flex items-center gap-2">
             <Newspaper className="size-4 text-muted-foreground" />
-            <h3 className="font-display text-sm font-semibold">Full Feed Log</h3>
+            <h3 className="font-display text-sm font-semibold">{t("market.full_feed_log")}</h3>
             <span className="ml-auto text-xs text-muted-foreground">{items.length} posts</span>
           </div>
           <div className="max-h-80 overflow-auto rounded-xl border border-white/[0.06]">
             <table className="w-full text-left text-xs">
               <thead className="sticky top-0 bg-[#0c0c14]/95 backdrop-blur">
                 <tr className="text-muted-foreground">
-                  {["Date", "Channel", "Price", "Text"].map((h) => (
+                  {[t("common.date"), t("common.channel"), t("common.price"), t("common.text")].map((h) => (
                     <th key={h} className="px-3 py-2.5 font-semibold uppercase tracking-wide">
                       {h}
                     </th>
@@ -244,7 +247,7 @@ export function MarketPage() {
         <div className="mb-4 flex items-center justify-between">
           <span className="flex items-center gap-2 text-sm font-semibold">
             <Gauge className="size-4 text-secondary" />
-            Price Arbitrage Check
+            {t("market.arbitrage_check")}
           </span>
           <button
             onClick={runArbitrage}
@@ -252,7 +255,7 @@ export function MarketPage() {
             className="flex items-center gap-1.5 rounded-lg bg-secondary/15 px-3 py-1.5 text-xs font-semibold text-secondary transition-colors hover:bg-secondary/25 disabled:opacity-50"
           >
             {arbitrageLoading ? <Loader2 className="size-3.5 animate-spin" /> : <Gauge className="size-3.5" />}
-            Check deviation
+            {t("market.check_deviation")}
           </button>
         </div>
         {arbitrage && (
@@ -268,19 +271,19 @@ export function MarketPage() {
           >
             <div className="grid gap-4 sm:grid-cols-3">
               <div>
-                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Internal Avg</div>
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{t("market.internal_avg")}</div>
                 <div className="mt-1 font-display text-xl font-bold text-foreground">
                   {formatCurrency(arbitrage.internal_avg)}
                 </div>
               </div>
               <div>
-                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Market Index</div>
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{t("market.market_index")}</div>
                 <div className="mt-1 font-display text-xl font-bold text-primary">
                   {formatCurrency(arbitrage.market_price, arbitrage.currency)}
                 </div>
               </div>
               <div>
-                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Deviation</div>
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{t("market.deviation")}</div>
                 <div
                   className={cn(
                     "mt-1 flex items-center gap-1.5 font-display text-xl font-bold",
@@ -300,8 +303,7 @@ export function MarketPage() {
         )}
         {!arbitrage && !arbitrageLoading && (
           <p className="text-sm text-muted-foreground">
-            Compare your average sale price against the live market index. Requires a sales
-            upload (BI) and cached market prices.
+            {t("market.arbitrage_desc")}
           </p>
         )}
       </div>
@@ -309,7 +311,7 @@ export function MarketPage() {
       <div className="glass gradient-border rounded-2xl p-5">
         <div className="mb-4 flex items-center gap-2">
           <Calculator className="size-4 text-primary" />
-          <h3 className="font-display text-sm font-semibold">Deal Profitability Calculator</h3>
+          <h3 className="font-display text-sm font-semibold">{t("market.deal_calculator")}</h3>
         </div>
         <DealCalculator />
       </div>

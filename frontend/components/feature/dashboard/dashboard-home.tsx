@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { motion } from "framer-motion";
 import {
   ArrowUpRight,
@@ -52,6 +53,7 @@ function TileHeader({
   href?: string;
   accent?: "primary" | "secondary" | "accent";
 }) {
+  const t = useTranslations();
   const accentClass = {
     primary: "bg-primary/15 text-primary",
     secondary: "bg-secondary/15 text-secondary",
@@ -70,7 +72,7 @@ function TileHeader({
           href={href}
           className="group flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
-          Open
+          {t("common.open")}
           <ArrowUpRight className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </Link>
       )}
@@ -79,6 +81,7 @@ function TileHeader({
 }
 
 function BiSummaryTile() {
+  const t = useTranslations();
   const [bi] = React.useState<BiResult | null>(() => {
     try {
       const raw = localStorage.getItem("iraj-last-bi");
@@ -90,16 +93,16 @@ function BiSummaryTile() {
   const k = bi?.kpis;
   const stats = k
     ? [
-        { label: "Revenue", value: formatCurrency(k.revenue), tone: "primary" },
-        { label: "Tonnage", value: formatNumber(k.tonnage, " t"), tone: "secondary" },
-        { label: "Avg Price", value: formatCurrency(k.avg_price), tone: "primary" },
-        { label: "Conversion", value: formatPercent(k.conversion_rate), tone: "accent" },
+        { label: t("dashboard.revenue"), value: formatCurrency(k.revenue), tone: "primary" },
+        { label: t("dashboard.tonnage"), value: formatNumber(k.tonnage, " t"), tone: "secondary" },
+        { label: t("dashboard.avg_price"), value: formatCurrency(k.avg_price), tone: "primary" },
+        { label: t("dashboard.conversion"), value: formatPercent(k.conversion_rate), tone: "accent" },
       ]
     : [];
 
   return (
     <BentoTile delay={0.05}>
-      <TileHeader icon={BarChart3} title="Business Intelligence" href="/bi" accent="primary" />
+      <TileHeader icon={BarChart3} title={t("dashboard.bi_title")} href="/bi" accent="primary" />
       {k ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {stats.map((s) => (
@@ -124,13 +127,13 @@ function BiSummaryTile() {
         <div className="flex flex-col items-center gap-3 py-6 text-center">
           <Database className="size-7 text-muted-foreground/50" />
           <p className="text-sm text-muted-foreground">
-            No sales data loaded yet.
+            {t("dashboard.no_bi_data")}
           </p>
           <Link
             href="/bi"
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5"
           >
-            Upload sales sheet
+            {t("dashboard.upload_sales_sheet")}
             <ArrowUpRight className="size-3.5" />
           </Link>
         </div>
@@ -140,6 +143,7 @@ function BiSummaryTile() {
 }
 
 function LivePricesTile() {
+  const t = useTranslations();
   const [items, setItems] = React.useState<PriceFeed[] | null>(null);
   const [scraping, setScraping] = React.useState(false);
 
@@ -168,7 +172,7 @@ function LivePricesTile() {
 
   return (
     <BentoTile delay={0.12}>
-      <TileHeader icon={LineChart} title="Live Market Prices" href="/market" accent="accent" />
+      <TileHeader icon={LineChart} title={t("dashboard.market_title")} href="/market" accent="accent" />
       {!items ? (
         <div className="space-y-2">
           {[0, 1, 2].map((i) => (
@@ -199,18 +203,18 @@ function LivePricesTile() {
             className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground disabled:opacity-50"
           >
             <Zap className={cn("size-3.5", scraping && "animate-pulse")} />
-            {scraping ? "Scraping…" : "Refresh feeds"}
+            {scraping ? t("dashboard.scraping") : t("dashboard.refresh_feeds")}
           </button>
         </div>
       ) : (
         <div className="flex flex-col items-center gap-3 py-6 text-center">
           <TrendingUp className="size-7 text-muted-foreground/50" />
-          <p className="text-sm text-muted-foreground">No prices cached.</p>
+          <p className="text-sm text-muted-foreground">{t("dashboard.no_prices")}</p>
           <Link
             href="/market"
             className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-4 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-white/5"
           >
-            Configure feeds
+            {t("dashboard.configure_feeds")}
             <ArrowUpRight className="size-3.5" />
           </Link>
         </div>
@@ -220,6 +224,7 @@ function LivePricesTile() {
 }
 
 function RagQuickSearchTile() {
+  const t = useTranslations();
   const [query, setQuery] = React.useState("");
   const [results, setResults] = React.useState<RagResult[] | null>(null);
   const [loading, setLoading] = React.useState(false);
@@ -240,13 +245,13 @@ function RagQuickSearchTile() {
 
   return (
     <BentoTile delay={0.19}>
-      <TileHeader icon={Library} title="Standards Quick Search" href="/standards" accent="secondary" />
+      <TileHeader icon={Library} title={t("dashboard.standards_title")} href="/standards" accent="secondary" />
       <form onSubmit={search} className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="e.g. ASTM A615 yield strength"
+          placeholder={t("dashboard.search_placeholder")}
           className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] pl-9 pr-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-secondary/60 focus:ring-2 focus:ring-secondary/20"
         />
       </form>
@@ -279,12 +284,12 @@ function RagQuickSearchTile() {
       )}
       {!loading && results && results.length === 0 && (
         <p className="mt-3 rounded-xl bg-white/[0.03] p-3 text-xs text-muted-foreground">
-          No matches. Upload standards in the Standards tab to enable semantic search.
+          {t("dashboard.no_rag_matches")}
         </p>
       )}
       {!loading && !results && (
         <p className="mt-3 text-xs text-muted-foreground">
-          Semantic search across your indexed steel standards.
+          {t("dashboard.rag_hint")}
         </p>
       )}
     </BentoTile>
@@ -292,18 +297,20 @@ function RagQuickSearchTile() {
 }
 
 function CalculatorTile() {
+  const t = useTranslations();
   return (
     <BentoTile delay={0.26}>
-      <TileHeader icon={Calculator} title="Deal Profitability" accent="primary" />
+      <TileHeader icon={Calculator} title={t("dashboard.calculator_title")} accent="primary" />
       <DealCalculator compact />
     </BentoTile>
   );
 }
 
 export function DashboardHome() {
+  const t = useTranslations();
   const hour = new Date().getHours();
   const greeting =
-    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    hour < 12 ? t("dashboard.greeting_morning") : hour < 18 ? t("dashboard.greeting_afternoon") : t("dashboard.greeting_evening");
 
   return (
     <div className="flex flex-col gap-5">
@@ -318,11 +325,10 @@ export function DashboardHome() {
           <span className="text-sm font-medium text-muted-foreground">{greeting}</span>
         </div>
         <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-          Your <span className="text-gradient">sales command center</span>
+          {t("dashboard.your")} <span className="text-gradient">{t("dashboard.sales_command_center")}</span>
         </h2>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          BI intelligence, standards search, live market pricing, and an AI copilot —
-          all in one glass dashboard.
+          {t("dashboard.subtitle")}
         </p>
       </motion.div>
 
