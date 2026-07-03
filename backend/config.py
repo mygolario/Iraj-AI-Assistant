@@ -20,7 +20,10 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 CORS_ORIGINS = [
     o.strip()
-    for o in os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",")
+    for o in os.environ.get(
+        "CORS_ORIGINS",
+        "http://localhost:3000,https://iraj-ai-assistant-dun.vercel.app",
+    ).split(",")
     if o.strip()
 ]
 
