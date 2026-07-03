@@ -1,0 +1,22 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Streamlit and Local App States
+.streamlit/
+temp/
+temp_standards/
+live_prices.json
+.agents/
+.agents
+
+# Environment Variables & Credentials
+.env
+.env.*
+
+# OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini

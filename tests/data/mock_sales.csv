@@ -1,0 +1,51 @@
+Date,Customer,Rebar Grade,Tonnage,Unit Price,Status,Conversion
+2026-06-13,Tehran Steel Corp,A3,373.36,485.71,Negotiation,0
+2026-01-27,Shiraz Contractors,A3,299.34,411.12,Inquiry,0
+2026-02-25,Isfahan Builders,SD400,304.99,596.44,Closed,1
+2026-02-26,Tabriz Metallurgy,SD400,146.31,704.26,Negotiation,0
+2026-06-28,Tabriz Metallurgy,Grade 60,146.16,475.36,Quotation,0
+2026-01-27,Tehran Steel Corp,B500B,57.39,696.62,Quotation,0
+2026-01-12,Tabriz Metallurgy,SD400,71.16,722.8,Inquiry,0
+2026-05-22,Alborz Construction,HRB400,313.07,701.6,Negotiation,0
+2026-06-30,Tehran Steel Corp,A3,334.02,670.57,Inquiry,0
+2026-03-01,Tehran Steel Corp,B500B,146.21,622.49,Quotation,0
+2026-02-11,Alborz Construction,Grade 60,112.66,493.44,Inquiry,0
+2026-06-05,Isfahan Builders,SD400,367.27,457.19,Closed,1
+2026-03-11,Shiraz Contractors,A4,345.46,695.0,Inquiry,0
+2026-02-28,Tehran Steel Corp,Grade 60,206.57,423.17,Quotation,0
+2026-02-24,Tabriz Metallurgy,B500B,443.49,625.0,Negotiation,0
+2026-03-09,Isfahan Builders,A4,375.04,588.64,Closed,1
+2026-05-30,Tabriz Metallurgy,Grade 60,117.47,749.14,Closed,1
+2026-01-24,Tehran Steel Corp,A3,84.89,455.99,Closed,1
+2026-06-02,Tehran Steel Corp,B500B,196.99,748.64,Quotation,0
+2026-05-22,Tehran Steel Corp,HRB400,363.15,638.6,Quotation,0
+2026-06-14,Alborz Construction,A3,153.82,455.36,Inquiry,0
+2026-03-09,Shiraz Contractors,A4,258.76,437.24,Quotation,0
+2026-06-13,Shiraz Contractors,SD400,107.47,530.87,Negotiation,0
+2026-05-19,Shiraz Contractors,A3,303.48,571.01,Inquiry,0
+2026-04-03,Alborz Construction,A4,38.38,707.3,Inquiry,0
+2026-01-22,Tabriz Metallurgy,A3,489.21,586.45,Negotiation,0
+2026-02-02,Tabriz Metallurgy,SD400,90.91,584.69,Closed,1
+2026-02-24,Shiraz Contractors,HRB400,348.04,649.53,Closed,1
+2026-06-21,Alborz Construction,B500B,450.81,558.02,Negotiation,0
+2026-02-27,Tehran Steel Corp,Grade 60,20.31,593.87,Negotiation,0
+2026-01-02,Tehran Steel Corp,HRB400,319.24,480.13,Inquiry,0
+2026-03-26,Tehran Steel Corp,SD400,126.62,634.14,Negotiation,0
+2026-05-19,Isfahan Builders,HRB400,468.4,599.87,Closed,1
+2026-03-04,Tabriz Metallurgy,B500B,103.3,433.93,Closed,1
+2026-04-01,Tabriz Metallurgy,B500B,238.84,655.18,Inquiry,0
+2026-01-16,Tabriz Metallurgy,HRB400,176.26,701.59,Negotiation,0
+2026-02-19,Isfahan Builders,SD400,229.82,547.66,Quotation,0
+2026-04-29,Isfahan Builders,A3,227.13,701.47,Inquiry,0
+2026-01-13,Shiraz Contractors,A3,484.81,724.23,Negotiation,0
+2026-02-12,Tabriz Metallurgy,B500B,245.87,702.63,Inquiry,0
+2026-02-12,Tabriz Metallurgy,A3,492.8,492.82,Closed,1
+2026-03-15,Tabriz Metallurgy,HRB400,479.09,748.4,Closed,1
+2026-02-09,Isfahan Builders,Grade 60,116.67,420.47,Inquiry,0
+2026-03-22,Tehran Steel Corp,A3,296.25,576.0,Negotiation,0
+2026-01-15,Shiraz Contractors,A3,427.16,423.98,Inquiry,0
+2026-06-22,Isfahan Builders,B500B,68.74,711.6,Negotiation,0
+2026-05-29,Shiraz Contractors,A3,313.5,546.73,Quotation,0
+2026-03-08,Isfahan Builders,HRB400,360.93,483.54,Closed,1
+2026-02-03,Alborz Construction,B500B,164.93,663.15,Inquiry,0
+2026-01-03,Tabriz Metallurgy,SD400,499.24,748.63,Inquiry,0

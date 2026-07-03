@@ -1,0 +1,5 @@
+SAE J403 Chemical Compositions of Carbon Steels.
+Scope: Standard Grade 1008.
+Carbon: 0.10% max.
+Manganese: 0.30% - 0.50%.
+Phosphorus: 0.04% max.
