@@ -2,59 +2,133 @@
 @import "tw-animate-css";
 
 /* =========================================================================
-   AURORA INDIGO — Design System Tokens
-   A Linear/Vercel-grade dark glass theme: near-black indigo void with
-   electric indigo -> violet gradients and cyan spark highlights.
+   IRAJ — Fintech-Warm / Steel Design System
+   Light-mode-first. Warm paper base, graphite ink, single copper accent.
+   Hierarchy through type + spacing + hairlines. Depth through soft warm
+   shadows, never gradients or blur. Industrial precision, financial trust.
    ========================================================================= */
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  /* Surfaces */
-  --background: #08080d;
-  --foreground: #e6e8f0;
-  --card: #101019;
-  --card-foreground: #e6e8f0;
-  --popover: #12121d;
-  --popover-foreground: #e6e8f0;
+  /* --- Surfaces (warm neutrals) --- */
+  --background: #faf8f5;          /* warm paper */
+  --foreground: #1a1815;          /* graphite ink */
+  --bg-subtle: #f4f1ec;           /* recessed panels, table stripes */
+  --bg-elevated: #ffffff;         /* cards, popovers */
+  --bg-sunken: #efeae2;           /* inputs, wells */
+  --card: #ffffff;
+  --card-foreground: #1a1815;
+  --popover: #ffffff;
+  --popover-foreground: #1a1815;
 
-  /* Accents */
-  --primary: #6366f1;
+  /* --- Ink (graphite scale, never pure black) --- */
+  --ink: #1a1815;
+  --ink-muted: #5c574f;
+  --ink-subtle: #8a8478;
+  --ink-disabled: #b8b1a4;
+  --muted: #f4f1ec;
+  --muted-foreground: #5c574f;
+
+  /* --- Accent: single restrained copper (warm-steel material cue) --- */
+  --primary: #b45309;
   --primary-foreground: #ffffff;
-  --secondary: #8b5cf6;
+  --accent: #b45309;
+  --accent-foreground: #ffffff;
+  --accent-hover: #973f06;
+  --accent-soft: #fbeed7;
+  --accent-ink: #7c3a06;
+  --secondary: #1a1815;
   --secondary-foreground: #ffffff;
-  --muted: #181826;
-  --muted-foreground: #8b90a8;
-  --accent: #22d3ee;
-  --accent-foreground: #05060a;
-  --destructive: #ef4444;
+
+  /* --- Signal colors: muted, status-only, never decorative --- */
+  --destructive: #b43a3a;
   --destructive-foreground: #ffffff;
-  --success: #10b981;
-  --warning: #f59e0b;
+  --success: #3f7d52;
+  --warning: #c68a2e;
+  --positive: #3f7d52;
+  --negative: #b43a3a;
+  --info: #3d6b8c;
 
-  /* Lines & rings */
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.1);
-  --ring: #6366f1;
+  /* --- Lines (warm hairlines, structural) --- */
+  --border: #e4dfd4;
+  --input: #e4dfd4;
+  --line: #e4dfd4;
+  --line-strong: #d6cfc1;
+  --ring: #b45309;
 
-  /* Glass */
-  --glass-bg: rgba(255, 255, 255, 0.045);
-  --glass-bg-strong: rgba(255, 255, 255, 0.07);
-  --glass-border: rgba(255, 255, 255, 0.09);
-  --glass-highlight: rgba(255, 255, 255, 0.14);
-  --glass-blur: 18px;
+  /* --- Radii (deliberate, not all-pill) --- */
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
 
-  /* Radii */
-  --radius: 0.9rem;
-  --radius-sm: 0.5rem;
-  --radius-md: 0.7rem;
-  --radius-lg: 0.9rem;
-  --radius-xl: 1.25rem;
+  /* --- Elevation: soft layered warm shadows (no glow, no gradient) --- */
+  --shadow-1: 0 1px 2px rgba(26, 24, 21, 0.04), 0 1px 1px rgba(26, 24, 21, 0.03);
+  --shadow-2: 0 2px 4px rgba(26, 24, 21, 0.05), 0 4px 12px rgba(26, 24, 21, 0.06);
+  --shadow-3: 0 8px 24px rgba(26, 24, 21, 0.10), 0 2px 6px rgba(26, 24, 21, 0.06);
+
+  /* --- Typography stacks --- */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-instrument), var(--font-inter), ui-serif, Georgia, serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  --font-vazirmatn: var(--font-vazirmatn), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Farsi: swap stacks to Vazirmatn-first when RTL is active.
+   Vazirmatn covers Latin acceptably; Inter remains fallback. */
+[dir="rtl"] {
+  --font-sans: var(--font-vazirmatn), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-vazirmatn), var(--font-instrument), ui-serif, Georgia, serif;
+}
+
+/* Warm tinted dark mode — additive layer. next-themes puts class="dark" on <html>.
+   Light values in :root stay untouched; only the tokens that change are overridden.
+   Copper stays the single accent; depth comes from hairlines + slightly-lighter
+   elevated surface + subtle black shadows, never gradients or blur. */
+.dark {
+  color-scheme: dark;
+  --background: #16140f;   /* warm near-black */
+  --bg-subtle: #1c1a15;
+  --bg-elevated: #201d17;
+  --bg-sunken: #12110d;
+  --card: #201d17;
+  --popover: #201d17;
+  --foreground: #f0ebe0;   /* cream ink */
+  --ink: #f0ebe0;
+  --ink-muted: #b3ab9a;
+  --ink-subtle: #8a8273;
+  --ink-disabled: #5c564c;
+  --muted: #1c1a15;
+  --muted-foreground: #b3ab9a;
+  --secondary: #ece6da;            /* secondary solid inverts to cream on dark */
+  --secondary-foreground: #1a1815;
+  --accent: #b45309;               /* same copper — brand consistency */
+  --accent-hover: #cb6515;         /* slight brighten for hover on dark */
+  --accent-soft: #2a1f12;          /* dark warm brown for selected rows/chips */
+  --accent-ink: #e9c9a3;           /* light copper-cream text on accent-soft */
+  --border: #2e2a22;
+  --input: #2e2a22;
+  --line: #2e2a22;
+  --line-strong: #3a352c;
+  --ring: #b45309;
+  --positive: #6ea87f;
+  --negative: #d56363;
+  --warning: #d99a4a;
+  --info: #6b9bb8;
+  --destructive: #d56363;
+  --shadow-1: 0 1px 2px rgba(0,0,0,0.40), 0 1px 1px rgba(0,0,0,0.30);
+  --shadow-2: 0 2px 4px rgba(0,0,0,0.45), 0 4px 12px rgba(0,0,0,0.50);
+  --shadow-3: 0 8px 24px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.45);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-sunken: var(--bg-sunken);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -67,30 +141,42 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-info: var(--info);
   --color-border: var(--border);
   --color-input: var(--input);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
   --color-ring: var(--ring);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-ink-disabled: var(--ink-disabled);
 
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-outfit), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
 
-  --radius-sm: calc(var(--radius) - 6px);
-  --radius-md: calc(var(--radius) - 4px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 6px);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
 
-  --animate-shimmer: shimmer 2.5s linear infinite;
-  --animate-float: float 8s ease-in-out infinite;
+  --shadow-1: var(--shadow-1);
+  --shadow-2: var(--shadow-2);
+  --shadow-3: var(--shadow-3);
 }
 
 @layer base {
   * {
-    border-color: var(--border);
+    border-color: var(--line);
   }
 
   html {
@@ -110,219 +196,75 @@
   }
 
   ::selection {
-    background: rgba(99, 102, 241, 0.35);
-    color: #ffffff;
+    background: rgba(180, 83, 9, 0.18);
+    color: var(--ink);
   }
 
-  /* Custom scrollbar — themed */
+  /* Warm minimal scrollbar — no gradient */
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(139, 92, 246, 0.35) transparent;
+    scrollbar-color: var(--line-strong) transparent;
   }
   *::-webkit-scrollbar {
-    width: 9px;
-    height: 9px;
+    width: 10px;
+    height: 10px;
   }
   *::-webkit-scrollbar-track {
     background: transparent;
   }
   *::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, rgba(99, 102, 241, 0.5), rgba(139, 92, 246, 0.5));
+    background: var(--line-strong);
     border-radius: 9999px;
-    border: 2px solid transparent;
+    border: 3px solid transparent;
     background-clip: padding-box;
   }
   *::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, rgba(99, 102, 241, 0.8), rgba(139, 92, 246, 0.8));
+    background: var(--ink-subtle);
     background-clip: padding-box;
+  }
+
+  /* Display type helper — editorial serif for headings & KPI numbers */
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+
+  /* Tabular figures for prices, KPIs, tables */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 }
 
 /* =========================================================================
-   GLASS PRIMITIVES
+   STRUCTURAL UTILITIES
    ========================================================================= */
 
 @layer components {
-  .glass {
-    background: var(--glass-bg);
-    backdrop-filter: blur(var(--glass-blur)) saturate(150%);
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
-    border: 1px solid var(--glass-border);
-    box-shadow:
-      0 1px 0 0 rgba(255, 255, 255, 0.06) inset,
-      0 8px 30px -12px rgba(0, 0, 0, 0.7);
+  /* Recessed panel — sunken well for inputs, table bodies, code blocks */
+  .panel-sunken {
+    background: var(--bg-sunken);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
   }
 
-  .glass-strong {
-    background: var(--glass-bg-strong);
-    backdrop-filter: blur(calc(var(--glass-blur) + 6px)) saturate(160%);
-    -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 6px)) saturate(160%);
-    border: 1px solid var(--glass-border);
-    box-shadow:
-      0 1px 0 0 rgba(255, 255, 255, 0.08) inset,
-      0 12px 40px -12px rgba(0, 0, 0, 0.8);
+  /* Hairline divider with a touch more weight than default border */
+  .hr-structural {
+    height: 1px;
+    background: var(--line);
+    border: 0;
   }
 
-  /* Gradient hairline border via mask */
-  .gradient-border {
-    position: relative;
+  /* Focus ring — copper, subtle */
+  .focus-ring {
+    outline: none;
   }
-  .gradient-border::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(
-      135deg,
-      rgba(99, 102, 241, 0.6),
-      rgba(139, 92, 246, 0.25) 40%,
-      rgba(34, 211, 238, 0.35) 100%
-    );
-    -webkit-mask:
-      linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
-  }
-
-  .glow-indigo {
-    box-shadow:
-      0 0 0 1px rgba(99, 102, 241, 0.2),
-      0 8px 30px -8px rgba(99, 102, 241, 0.45);
-  }
-  .glow-violet {
-    box-shadow:
-      0 0 0 1px rgba(139, 92, 246, 0.2),
-      0 8px 30px -8px rgba(139, 92, 246, 0.45);
-  }
-
-  .text-gradient {
-    background: linear-gradient(120deg, #818cf8 0%, #a78bfa 45%, #22d3ee 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
-  /* Conic shimmer for buttons / badges */
-  .shimmer-border {
-    position: relative;
-    overflow: hidden;
-  }
-  .shimmer-border::after {
-    content: "";
-    position: absolute;
-    inset: -1px;
-    border-radius: inherit;
-    background: conic-gradient(
-      from 180deg at 50% 50%,
-      transparent 0deg,
-      rgba(99, 102, 241, 0.5) 90deg,
-      rgba(34, 211, 238, 0.4) 180deg,
-      transparent 270deg
-    );
-    animation: shimmer 2.5s linear infinite;
-    opacity: 0.6;
-    -webkit-mask:
-      linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    padding: 1px;
-    pointer-events: none;
+  .focus-ring:focus-visible {
+    box-shadow: 0 0 0 2px var(--background), 0 0 0 4px rgba(180, 83, 9, 0.35);
   }
 }
 
-/* =========================================================================
-   AURORA MESH BACKGROUND — animated gradient blobs
-   ========================================================================= */
-
-.aurora-mesh {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  overflow: hidden;
-  pointer-events: none;
-  background:
-    radial-gradient(60% 50% at 50% -10%, rgba(99, 102, 241, 0.16), transparent 70%),
-    radial-gradient(40% 40% at 100% 0%, rgba(139, 92, 246, 0.12), transparent 70%),
-    #08080d;
-}
-
-.aurora-blob {
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(70px);
-  opacity: 0.5;
-  will-change: transform;
-}
-
-.aurora-blob--indigo {
-  width: 42rem;
-  height: 42rem;
-  left: -8rem;
-  top: -10rem;
-  background: radial-gradient(circle at 30% 30%, #6366f1, transparent 65%);
-  animation: float-a 22s ease-in-out infinite;
-}
-
-.aurora-blob--violet {
-  width: 38rem;
-  height: 38rem;
-  right: -6rem;
-  top: 4rem;
-  background: radial-gradient(circle at 60% 40%, #8b5cf6, transparent 65%);
-  animation: float-b 26s ease-in-out infinite;
-}
-
-.aurora-blob--cyan {
-  width: 30rem;
-  height: 30rem;
-  left: 35%;
-  bottom: -12rem;
-  background: radial-gradient(circle at 50% 50%, #22d3ee, transparent 65%);
-  opacity: 0.28;
-  animation: float-c 30s ease-in-out infinite;
-}
-
-/* Subtle grid overlay */
-.aurora-grid {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
-  background-size: 56px 56px;
-  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%);
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%);
-}
-
-@keyframes float-a {
-  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-  50% { transform: translate3d(6rem, 4rem, 0) scale(1.08); }
-}
-@keyframes float-b {
-  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-  50% { transform: translate3d(-5rem, 6rem, 0) scale(1.12); }
-}
-@keyframes float-c {
-  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-  50% { transform: translate3d(4rem, -5rem, 0) scale(0.92); }
-}
-
-@keyframes shimmer {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-}
-
-/* Ticker marquee — replaces deprecated <marquee> */
+/* Ticker marquee — kept functional, restyled */
 @keyframes ticker-scroll {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
@@ -330,13 +272,23 @@
 .ticker-track {
   display: inline-flex;
   white-space: nowrap;
-  animation: ticker-scroll 40s linear infinite;
+  animation: ticker-scroll 50s linear infinite;
 }
 .ticker-track:hover {
   animation-play-state: paused;
 }
 
-/* Reduced motion */
+/* Skeleton shimmer on warm sunken blocks (replaces spinners) */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+.skeleton {
+  background: var(--bg-sunken);
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+/* Reduced motion — gates CSS and signals Framer consumers */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

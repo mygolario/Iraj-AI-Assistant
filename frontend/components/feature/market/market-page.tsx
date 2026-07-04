@@ -1,31 +1,41 @@
 "use client";
 
 import * as React from "react";
-import { useTranslations } from "next-intl";
-import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import {
-  Zap,
-  Settings2,
-  Loader2,
-  RefreshCw,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Calculator,
-  Gauge,
-  Newspaper,
-} from "lucide-react";
+  IconBolt,
+  IconTune,
+  IconLoader,
+  IconRefresh,
+  IconTrendUp,
+  IconTrendDown,
+  IconTrendFlat,
+  IconCalculator,
+  IconGauge,
+  IconFeed,
+} from "@/components/ui/icons";
 import { api } from "@/lib/api";
 import type { ArbitrageResult, BiResult, PriceFeed } from "@/lib/types";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn, formatCurrency, formatNumber } from "@/lib/utils";
 import { DealCalculator } from "../deal-calculator";
 
 const STATUS_META = {
-  opportunity: { icon: TrendingUp, tone: "success" as const, label: "Opportunity" },
-  compliance: { icon: Minus, tone: "primary" as const, label: "Compliant" },
-  alert: { icon: TrendingDown, tone: "destructive" as const, label: "Alert" },
+  opportunity: { icon: IconTrendUp, label: "Opportunity" },
+  compliance: { icon: IconTrendFlat, label: "Compliant" },
+  alert: { icon: IconTrendDown, label: "Alert" },
 };
+
+const toneByStatus: Record<ArbitrageResult["status"], string> = {
+  opportunity: "text-positive",
+  compliance: "text-ink",
+  alert: "text-negative",
+};
+
+const inputCls =
+  "w-full rounded-sm border border-line bg-bg-sunken p-3 text-sm text-ink outline-none transition-colors placeholder:text-ink-subtle focus:border-accent focus:bg-card";
 
 export function MarketPage() {
   const t = useTranslations();
@@ -120,105 +130,95 @@ export function MarketPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="glass rounded-2xl p-5">
+      <div className="rounded-md border border-line bg-card p-5 shadow-[var(--shadow-1)]">
         <div className="mb-3 flex items-center justify-between">
-          <span className="flex items-center gap-2 text-sm font-semibold">
-            <Settings2 className="size-4 text-accent" />
+          <span className="flex items-center gap-2 text-sm font-medium text-ink">
+            <IconTune className="size-4 text-accent" />
             {t("market.scraper_feeds")}
           </span>
-          <span className="text-[10px] text-muted-foreground">{t("market.up_to_channels")}</span>
+          <span className="text-[11px] text-ink-subtle">{t("market.up_to_channels")}</span>
         </div>
         <textarea
           value={urls}
           onChange={(e) => setUrls(e.target.value)}
           rows={4}
           placeholder={"https://t.me/s/your_channel_1\nhttps://t.me/s/your_channel_2"}
-          className="w-full resize-y rounded-xl border border-white/10 bg-white/[0.03] p-3 font-mono text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-accent/60 focus:ring-2 focus:ring-accent/20"
+          className={cn(inputCls, "font-mono text-[13px]")}
         />
         <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            onClick={saveUrls}
-            className="rounded-lg border border-white/10 px-4 py-2 text-xs font-semibold transition-colors hover:bg-white/5"
-          >
+          <Button variant="outline" size="sm" onClick={saveUrls}>
             Save feeds
-          </button>
-          <button
-            onClick={runScraper}
-            disabled={scraping}
-            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-primary to-secondary px-4 py-2 text-xs font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:opacity-50"
-          >
-            {scraping ? <Loader2 className="size-3.5 animate-spin" /> : <Zap className="size-3.5" />}
+          </Button>
+          <Button size="sm" onClick={runScraper} disabled={scraping}>
+            {scraping ? <IconLoader className="size-3.5 animate-spin" /> : <IconBolt className="size-3.5" />}
             {scraping ? "Scraping…" : "Run live scraper"}
-          </button>
+          </Button>
         </div>
       </div>
 
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="font-display text-sm font-semibold">{t("market.pricing_board")}</h3>
+          <h3 className="font-display text-base leading-tight tracking-tight text-ink">{t("market.pricing_board")}</h3>
           <button
             onClick={loadPrices}
-            className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="flex items-center gap-1.5 text-[13px] font-medium text-ink-muted transition-colors hover:text-accent"
           >
-            <RefreshCw className="size-3.5" />
+            <IconRefresh className="size-3.5" />
             Refresh
           </button>
         </div>
         {!items ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="h-28 animate-pulse rounded-2xl bg-white/[0.04]" />
+              <div key={i} className="skeleton h-28 rounded-md" />
             ))}
           </div>
         ) : priced.length === 0 ? (
-          <div className="glass flex flex-col items-center gap-3 rounded-2xl py-12 text-center">
-            <Newspaper className="size-7 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">
-              {t("market.no_priced")}
-            </p>
+          <div className="flex flex-col items-center gap-3 rounded-md border border-line bg-card py-12 text-center shadow-[var(--shadow-1)]">
+            <IconFeed className="size-7 text-ink-subtle" />
+            <p className="text-sm text-ink-muted">{t("market.no_priced")}</p>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {priced.slice(0, 8).map((item, i) => (
-              <motion.div
+              <div
                 key={i}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="glass gradient-border rounded-2xl border-t-2 border-t-secondary/40 p-4"
+                className="rounded-md border border-line border-t-2 border-t-accent bg-card p-4 shadow-[var(--shadow-1)]"
               >
-                <div className="truncate text-xs font-medium text-muted-foreground">
+                <div className="truncate text-[12px] font-medium text-ink-muted">
                   t.me/s/{item.channel}
                 </div>
-                <div className="mt-1 font-display text-xl font-bold text-primary">
+                <div className="mt-1.5 font-display text-2xl leading-none tracking-tight tabular-nums text-ink">
                   {formatCurrency(item.price, item.currency)}
                   {item.currency !== "USD" && (
-                    <span className="ml-1 text-xs text-muted-foreground">/{item.currency}</span>
+                    <span className="ms-1 text-[13px] text-ink-subtle">/{item.currency}</span>
                   )}
                 </div>
-                <div className="mt-2 text-[10px] text-muted-foreground">{item.date}</div>
-                <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground/80">
-                  {item.text}
-                </p>
-              </motion.div>
+                <div className="mt-2 text-[11px] text-ink-subtle">{item.date}</div>
+                {item.text && (
+                  <p className="mt-1.5 line-clamp-2 text-[12px] leading-relaxed text-ink-muted">
+                    {item.text}
+                  </p>
+                )}
+              </div>
             ))}
           </div>
         )}
       </div>
 
       {items && items.length > 0 && (
-        <div className="glass rounded-2xl p-5">
-          <div className="mb-3 flex items-center gap-2">
-            <Newspaper className="size-4 text-muted-foreground" />
-            <h3 className="font-display text-sm font-semibold">{t("market.full_feed_log")}</h3>
-            <span className="ml-auto text-xs text-muted-foreground">{items.length} posts</span>
+        <div className="rounded-md border border-line bg-card shadow-[var(--shadow-1)]">
+          <div className="flex items-center gap-2 border-b border-line px-5 py-4">
+            <IconFeed className="size-4 text-ink-muted" />
+            <h3 className="font-display text-base leading-tight tracking-tight text-ink">{t("market.full_feed_log")}</h3>
+            <span className="ms-auto text-[13px] text-ink-muted">{items.length} posts</span>
           </div>
-          <div className="max-h-80 overflow-auto rounded-xl border border-white/[0.06]">
-            <table className="w-full text-left text-xs">
-              <thead className="sticky top-0 bg-[#0c0c14]/95 backdrop-blur">
-                <tr className="text-muted-foreground">
+          <div className="max-h-80 overflow-auto">
+            <table className="w-full text-start text-sm">
+              <thead className="sticky top-0 bg-bg-subtle">
+                <tr className="text-ink-subtle">
                   {[t("common.date"), t("common.channel"), t("common.price"), t("common.text")].map((h) => (
-                    <th key={h} className="px-3 py-2.5 font-semibold uppercase tracking-wide">
+                    <th key={h} className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em]">
                       {h}
                     </th>
                   ))}
@@ -226,13 +226,13 @@ export function MarketPage() {
               </thead>
               <tbody>
                 {items.map((item, i) => (
-                  <tr key={i} className="border-t border-white/[0.04] hover:bg-white/[0.03]">
-                    <td className="whitespace-nowrap px-3 py-2.5 text-muted-foreground">{item.date}</td>
-                    <td className="px-3 py-2.5 font-medium text-foreground">{item.channel}</td>
-                    <td className="whitespace-nowrap px-3 py-2.5 font-mono font-semibold text-primary">
+                  <tr key={i} className="border-t border-line hover:bg-bg-subtle">
+                    <td className="whitespace-nowrap px-4 py-2.5 text-ink-muted">{item.date}</td>
+                    <td className="px-4 py-2.5 font-medium text-ink">{item.channel}</td>
+                    <td className="whitespace-nowrap px-4 py-2.5 font-mono font-semibold text-ink tabular-nums">
                       {item.price != null ? formatCurrency(item.price, item.currency) : "—"}
                     </td>
-                    <td className="max-w-md px-3 py-2.5 text-muted-foreground">
+                    <td className="max-w-md px-4 py-2.5 text-ink-muted">
                       <span className="line-clamp-2">{item.text}</span>
                     </td>
                   </tr>
@@ -243,75 +243,53 @@ export function MarketPage() {
         </div>
       )}
 
-      <div className="glass gradient-border rounded-2xl p-5">
+      <div className="rounded-md border border-line bg-card p-5 shadow-[var(--shadow-1)]">
         <div className="mb-4 flex items-center justify-between">
-          <span className="flex items-center gap-2 text-sm font-semibold">
-            <Gauge className="size-4 text-secondary" />
+          <span className="flex items-center gap-2 text-sm font-medium text-ink">
+            <IconGauge className="size-4 text-accent" />
             {t("market.arbitrage_check")}
           </span>
-          <button
-            onClick={runArbitrage}
-            disabled={arbitrageLoading}
-            className="flex items-center gap-1.5 rounded-lg bg-secondary/15 px-3 py-1.5 text-xs font-semibold text-secondary transition-colors hover:bg-secondary/25 disabled:opacity-50"
-          >
-            {arbitrageLoading ? <Loader2 className="size-3.5 animate-spin" /> : <Gauge className="size-3.5" />}
+          <Button variant="outline" size="sm" onClick={runArbitrage} disabled={arbitrageLoading}>
+            {arbitrageLoading ? <IconLoader className="size-3.5 animate-spin" /> : <IconGauge className="size-3.5" />}
             {t("market.check_deviation")}
-          </button>
+          </Button>
         </div>
         {arbitrage && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={cn(
-              "rounded-xl p-4",
-              arbitrage.status === "opportunity" && "bg-success/10",
-              arbitrage.status === "compliance" && "bg-primary/10",
-              arbitrage.status === "alert" && "bg-destructive/10",
-            )}
-          >
+          <div className="rounded-sm border border-line bg-bg-subtle p-4">
             <div className="grid gap-4 sm:grid-cols-3">
               <div>
-                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{t("market.internal_avg")}</div>
-                <div className="mt-1 font-display text-xl font-bold text-foreground">
+                <div className="text-[11px] uppercase tracking-[0.08em] text-ink-subtle">{t("market.internal_avg")}</div>
+                <div className="mt-1.5 font-display text-xl leading-none tracking-tight tabular-nums text-ink">
                   {formatCurrency(arbitrage.internal_avg)}
                 </div>
               </div>
               <div>
-                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{t("market.market_index")}</div>
-                <div className="mt-1 font-display text-xl font-bold text-primary">
+                <div className="text-[11px] uppercase tracking-[0.08em] text-ink-subtle">{t("market.market_index")}</div>
+                <div className="mt-1.5 font-display text-xl leading-none tracking-tight tabular-nums text-ink">
                   {formatCurrency(arbitrage.market_price, arbitrage.currency)}
                 </div>
               </div>
               <div>
-                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{t("market.deviation")}</div>
-                <div
-                  className={cn(
-                    "mt-1 flex items-center gap-1.5 font-display text-xl font-bold",
-                    arbitrage.status === "opportunity" && "text-success",
-                    arbitrage.status === "compliance" && "text-primary",
-                    arbitrage.status === "alert" && "text-destructive",
-                  )}
-                >
+                <div className="text-[11px] uppercase tracking-[0.08em] text-ink-subtle">{t("market.deviation")}</div>
+                <div className={cn("mt-1.5 flex items-center gap-1.5 font-display text-xl leading-none tracking-tight tabular-nums", toneByStatus[arbitrage.status])}>
                   {React.createElement(STATUS_META[arbitrage.status].icon, { className: "size-5" })}
                   {arbitrage.deviation_pct > 0 ? "+" : ""}
                   {formatNumber(arbitrage.deviation_pct, "%")}
                 </div>
               </div>
             </div>
-            <p className="mt-3 text-sm text-muted-foreground">{arbitrage.message}</p>
-          </motion.div>
+            <p className="mt-3 text-[13px] text-ink-muted">{arbitrage.message}</p>
+          </div>
         )}
         {!arbitrage && !arbitrageLoading && (
-          <p className="text-sm text-muted-foreground">
-            {t("market.arbitrage_desc")}
-          </p>
+          <p className="text-sm text-ink-muted">{t("market.arbitrage_desc")}</p>
         )}
       </div>
 
-      <div className="glass gradient-border rounded-2xl p-5">
+      <div className="rounded-md border border-line bg-card p-5 shadow-[var(--shadow-1)]">
         <div className="mb-4 flex items-center gap-2">
-          <Calculator className="size-4 text-primary" />
-          <h3 className="font-display text-sm font-semibold">{t("market.deal_calculator")}</h3>
+          <IconCalculator className="size-4 text-accent" />
+          <h3 className="font-display text-base leading-tight tracking-tight text-ink">{t("market.deal_calculator")}</h3>
         </div>
         <DealCalculator />
       </div>

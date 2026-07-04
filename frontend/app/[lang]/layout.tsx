@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { Inter, Outfit, Vazirmatn } from "next/font/google";
+import { Inter, Instrument_Serif, Geist_Mono, Vazirmatn } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
-import { AuroraBackground } from "@/components/aurora-background";
 import { Providers } from "../providers";
 import "../globals.css";
 
@@ -13,15 +12,22 @@ const inter = Inter({
   display: "swap",
 });
 
-const outfit = Outfit({
-  variable: "--font-outfit",
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument",
+  subsets: ["latin"],
+  weight: "400",
+  display: "swap",
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
   display: "swap",
 });
 
 const vazirmatn = Vazirmatn({
   variable: "--font-vazirmatn",
-  subsets: ["arabic"],
+  subsets: ["arabic", "latin"],
   display: "swap",
 });
 
@@ -58,11 +64,11 @@ export default async function RootLayout({
     <html
       lang={lang}
       dir={isRtl ? "rtl" : "ltr"}
-      className={`${inter.variable} ${outfit.variable} ${isRtl ? vazirmatn.variable : ""} h-full antialiased`}
+      suppressHydrationWarning
+      className={`${inter.variable} ${instrumentSerif.variable} ${geistMono.variable} ${vazirmatn.variable} h-full antialiased`}
       data-scroll-behavior="smooth"
     >
-      <body className="min-h-full font-sans">
-        <AuroraBackground />
+      <body className="min-h-full font-sans bg-background text-foreground">
         <NextIntlClientProvider messages={messages}>
           <Providers>{children}</Providers>
         </NextIntlClientProvider>

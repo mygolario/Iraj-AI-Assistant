@@ -3,17 +3,18 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import {
-  Send,
-  Sparkles,
-  Square,
-  Trash2,
-  User,
-  Bot,
-} from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
+import {
+  IconSend,
+  IconCopilot,
+  IconStop,
+  IconTrash,
+  IconUser,
+  IconBot,
+} from "@/components/ui/icons";
 import { api } from "@/lib/api";
 import type { ChatMessage } from "@/lib/types";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Markdown } from "@/components/ui/markdown";
 
@@ -127,39 +128,35 @@ export function ChatView() {
   };
 
   return (
-    <div className="flex h-[calc(100dvh-11rem)] flex-col gap-4">
+    <div className="flex h-[calc(100dvh-13rem)] flex-col gap-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-secondary">
-            <Sparkles className="size-4 text-white" />
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-8 items-center justify-center rounded-sm border border-line bg-bg-subtle text-accent">
+            <IconCopilot className="size-4" />
           </div>
           <div>
-            <h2 className="font-display text-sm font-bold leading-none">{t("title")}</h2>
-            <span className="text-[11px] text-muted-foreground">
-              {t("subtitle")}
-            </span>
+            <h2 className="font-display text-base leading-tight tracking-tight text-ink">{t("title")}</h2>
+            <span className="text-[12px] text-ink-muted">{t("subtitle")}</span>
           </div>
         </div>
-        <button
-          onClick={clear}
-          className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
-        >
-          <Trash2 className="size-3.5" />
+        <Button variant="outline" size="sm" onClick={clear}>
+          <IconTrash className="size-3.5" />
           {tc("clear")}
-        </button>
+        </Button>
       </div>
 
       <div
         ref={scrollRef}
-        className="glass flex-1 overflow-y-auto rounded-2xl p-4"
+        className="flex-1 overflow-y-auto rounded-md border border-line bg-card p-4 shadow-[var(--shadow-1)]"
       >
         <div className="flex flex-col gap-4">
           <AnimatePresence initial={false}>
             {messages.map((msg, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
                 className={cn(
                   "flex gap-3",
                   msg.role === "user" ? "flex-row-reverse" : "flex-row",
@@ -167,34 +164,34 @@ export function ChatView() {
               >
                 <div
                   className={cn(
-                    "flex size-8 shrink-0 items-center justify-center rounded-lg",
+                    "flex size-8 shrink-0 items-center justify-center rounded-sm border border-line",
                     msg.role === "user"
-                      ? "bg-primary/15 text-primary"
-                      : "bg-secondary/15 text-secondary",
+                      ? "bg-bg-subtle text-ink"
+                      : "bg-accent-soft text-accent",
                   )}
                 >
-                  {msg.role === "user" ? <User className="size-4" /> : <Bot className="size-4" />}
+                  {msg.role === "user" ? <IconUser className="size-4" /> : <IconBot className="size-4" />}
                 </div>
                 <div
                   className={cn(
-                    "max-w-[80%] rounded-2xl px-4 py-3",
+                    "max-w-[80%] rounded-md border px-4 py-3",
                     msg.role === "user"
-                      ? "rounded-tr-sm border border-primary/30 bg-primary/[0.06]"
-                      : "rounded-tl-sm border border-secondary/30 bg-secondary/[0.06]",
+                      ? "border-line bg-bg-subtle"
+                      : "border-line bg-bg-subtle",
                   )}
                 >
                   {msg.role === "assistant" ? (
                     msg.content ? (
                       <Markdown>{msg.content}</Markdown>
                     ) : (
-                      <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <span className="size-2 animate-bounce rounded-full bg-secondary [animation-delay:-0.3s]" />
-                        <span className="size-2 animate-bounce rounded-full bg-secondary [animation-delay:-0.15s]" />
-                        <span className="size-2 animate-bounce rounded-full bg-secondary" />
+                      <span className="flex items-center gap-1.5 text-sm text-ink-muted">
+                        <span className="size-2 animate-bounce rounded-full bg-ink-subtle [animation-delay:-0.3s]" />
+                        <span className="size-2 animate-bounce rounded-full bg-ink-subtle [animation-delay:-0.15s]" />
+                        <span className="size-2 animate-bounce rounded-full bg-ink-subtle" />
                       </span>
                     )
                   ) : (
-                    <p className="text-sm text-foreground">{msg.content}</p>
+                    <p className="text-sm text-ink">{msg.content}</p>
                   )}
                 </div>
               </motion.div>
@@ -209,7 +206,7 @@ export function ChatView() {
             <button
               key={s}
               onClick={() => send(s)}
-              className="glass rounded-full px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
+              className="rounded-sm border border-line bg-card px-3 py-1.5 text-[13px] text-ink-muted transition-colors hover:bg-bg-subtle hover:text-ink"
             >
               {s}
             </button>
@@ -222,7 +219,7 @@ export function ChatView() {
           e.preventDefault();
           send();
         }}
-        className="glass flex items-end gap-2 rounded-2xl p-2"
+        className="flex items-end gap-2 rounded-md border border-line bg-card p-2 shadow-[var(--shadow-1)]"
       >
         <textarea
           value={input}
@@ -235,24 +232,26 @@ export function ChatView() {
           }}
           rows={1}
           placeholder={t("placeholder")}
-          className="max-h-32 min-h-[2.5rem] flex-1 resize-none bg-transparent px-2 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+          className="max-h-32 min-h-[2.5rem] flex-1 resize-none bg-transparent px-2 py-2 text-sm text-ink outline-none placeholder:text-ink-subtle"
         />
         {streaming ? (
-          <button
+          <Button
             type="button"
+            size="icon"
+            variant="outline"
             onClick={stop}
-            className="flex size-10 items-center justify-center rounded-xl bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25"
+            className="text-negative hover:bg-bg-subtle"
           >
-            <Square className="size-4" />
-          </button>
+            <IconStop className="size-4" />
+          </Button>
         ) : (
-          <button
+          <Button
             type="submit"
+            size="icon"
             disabled={!input.trim()}
-            className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary text-white transition-transform hover:-translate-y-0.5 disabled:opacity-40 disabled:hover:translate-y-0"
           >
-            <Send className="size-4" />
-          </button>
+            <IconSend className="size-4" />
+          </Button>
         )}
       </form>
     </div>

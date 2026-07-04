@@ -1,23 +1,24 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
 
-type Tone = "primary" | "secondary" | "accent" | "success" | "destructive";
+export type StatTone = "accent" | "ink" | "positive" | "negative" | "warning" | "info";
 
-const toneMap: Record<Tone, string> = {
-  primary: "text-primary",
-  secondary: "text-secondary",
+const toneText: Record<StatTone, string> = {
   accent: "text-accent",
-  success: "text-success",
-  destructive: "text-destructive",
+  ink: "text-ink",
+  positive: "text-positive",
+  negative: "text-negative",
+  warning: "text-warning",
+  info: "text-info",
 };
 
-const bgMap: Record<Tone, string> = {
-  primary: "bg-primary/15",
-  secondary: "bg-secondary/15",
-  accent: "bg-accent/15",
-  success: "bg-success/15",
-  destructive: "bg-destructive/15",
+const toneIconBg: Record<StatTone, string> = {
+  accent: "bg-accent-soft text-accent",
+  ink: "bg-bg-subtle text-ink",
+  positive: "bg-bg-subtle text-positive",
+  negative: "bg-bg-subtle text-negative",
+  warning: "bg-bg-subtle text-warning",
+  info: "bg-bg-subtle text-info",
 };
 
 export function StatCard({
@@ -25,38 +26,45 @@ export function StatCard({
   value,
   sub,
   icon: Icon,
-  tone = "primary",
-  delay = 0,
+  tone = "ink",
+  className,
 }: {
   label: string;
-  value: string;
-  sub?: string;
-  icon: LucideIcon;
-  tone?: Tone;
-  delay?: number;
+  value: React.ReactNode;
+  sub?: React.ReactNode;
+  icon: React.ComponentType<{ className?: string }>;
+  tone?: StatTone;
+  className?: string;
 }) {
   return (
     <div
-      className="glass gradient-border rounded-2xl p-5"
-      style={{ animationDelay: `${delay}ms` }}
+      className={cn(
+        "rounded-md border border-line bg-card p-5 shadow-[var(--shadow-1)]",
+        className,
+      )}
     >
-      <div className="flex items-start justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="flex items-start justify-between gap-4">
+        <span className="text-[12px] font-medium uppercase tracking-[0.08em] text-ink-subtle">
           {label}
         </span>
         <div
           className={cn(
-            "flex size-8 items-center justify-center rounded-lg",
-            bgMap[tone],
+            "flex size-8 items-center justify-center rounded-sm",
+            toneIconBg[tone],
           )}
         >
-          <Icon className={cn("size-4", toneMap[tone])} />
+          <Icon className="size-4" />
         </div>
       </div>
-      <div className={cn("mt-3 font-display text-2xl font-bold tabular-nums", toneMap[tone])}>
+      <div
+        className={cn(
+          "mt-4 font-display text-[34px] leading-none tracking-tight tabular-nums",
+          toneText[tone],
+        )}
+      >
         {value}
       </div>
-      {sub && <div className="mt-1 text-xs text-muted-foreground">{sub}</div>}
+      {sub && <div className="mt-2 text-sm text-ink-muted">{sub}</div>}
     </div>
   );
 }

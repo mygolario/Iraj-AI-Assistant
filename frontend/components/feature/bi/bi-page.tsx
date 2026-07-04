@@ -13,30 +13,46 @@ import {
   Cell,
 } from "recharts";
 import {
-  DollarSign,
-  Layers,
-  Tag,
-  Percent,
-  Table2,
-  BarChart3,
-  Loader2,
-} from "lucide-react";
+  IconRevenue,
+  IconTonnage,
+  IconAvgPrice,
+  IconConversion,
+  IconTable,
+  IconAnalytics,
+  IconLoader,
+} from "@/components/ui/icons";
 import { useTranslations } from "next-intl";
+import { useTheme } from "next-themes";
 import { api } from "@/lib/api";
 import type { BiResult } from "@/lib/types";
+import { Badge } from "@/components/ui/badge";
 import { cn, formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
 import { FileDropzone } from "@/components/ui/file-dropzone";
 import { StatCard } from "@/components/ui/stat-card";
 
-const GRADE_COLORS = [
-  "#6366f1",
-  "#8b5cf6",
-  "#22d3ee",
-  "#a78bfa",
-  "#f472b6",
-  "#34d399",
-  "#fbbf24",
-  "#60a5fa",
+// Warm chart palettes — graphite + copper + neutral steps. No indigo/violet/cyan.
+// SVG fill/stroke attributes don't resolve CSS vars reliably, so we keep two
+// hex palettes and pick via useTheme. Cream ink replaces graphite on dark.
+const GRADE_COLORS_LIGHT = [
+  "#b45309",
+  "#1a1815",
+  "#8a8478",
+  "#c68a2e",
+  "#3f7d52",
+  "#3d6b8c",
+  "#d6cfc1",
+  "#5c574f",
+];
+
+const GRADE_COLORS_DARK = [
+  "#c68a2e",
+  "#f0ebe0",
+  "#8a8273",
+  "#d97706",
+  "#6ea87f",
+  "#6b9bb8",
+  "#3a352c",
+  "#b3ab9a",
 ];
 
 function ChartTooltip({
@@ -52,16 +68,13 @@ function ChartTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="glass-strong rounded-lg px-3 py-2 text-xs">
-      <div className="mb-1 font-semibold text-foreground">{label}</div>
+    <div className="rounded-sm border border-line bg-card px-3 py-2 text-[12px] shadow-[var(--shadow-3)]">
+      <div className="mb-1 font-semibold text-ink">{label}</div>
       {payload.map((p, i) => (
         <div key={i} className="flex items-center gap-2">
-          <span
-            className="size-2 rounded-full"
-            style={{ background: p.color }}
-          />
-          <span className="text-muted-foreground">{p.name}:</span>
-          <span className="font-semibold text-foreground">{formatter(p.value)}</span>
+          <span className="size-2 rounded-full" style={{ background: p.color }} />
+          <span className="text-ink-muted">{p.name}:</span>
+          <span className="font-semibold text-ink tabular-nums">{formatter(p.value)}</span>
         </div>
       ))}
     </div>
@@ -70,6 +83,12 @@ function ChartTooltip({
 
 export function BiPage() {
   const t = useTranslations();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const gradeColors = isDark ? GRADE_COLORS_DARK : GRADE_COLORS_LIGHT;
+  const gridStroke = isDark ? "rgba(240,235,224,0.08)" : "#e4dfd4";
+  const tickFill = isDark ? "#a89f8e" : "#8a8478";
+  const cursorFill = isDark ? "rgba(240,235,224,0.04)" : "#f4f1ec";
   const [result, setResult] = React.useState<BiResult | null>(null);
   const [loading, setLoading] = React.useState(false);
 
@@ -109,7 +128,7 @@ export function BiPage() {
       {loading && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-32 animate-pulse rounded-2xl bg-white/[0.04]" />
+            <div key={i} className="skeleton h-32 rounded-md" />
           ))}
         </div>
       )}
@@ -117,48 +136,48 @@ export function BiPage() {
       {!loading && k && (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label={t("bi.total_revenue")} value={formatCurrency(k.revenue)} icon={DollarSign} tone="primary" delay={0} sub={t("bi.total_revenue_sub")} />
-            <StatCard label={t("bi.volume_sold")} value={formatNumber(k.tonnage, " t")} icon={Layers} tone="secondary" delay={60} sub={t("bi.volume_sold_sub")} />
-            <StatCard label={t("bi.avg_price")} value={formatCurrency(k.avg_price)} icon={Tag} tone="accent" delay={120} sub={t("bi.avg_price_sub")} />
-            <StatCard label={t("bi.conversion")} value={formatPercent(k.conversion_rate)} icon={Percent} tone="success" delay={180} sub={t("bi.conversion_sub")} />
+            <StatCard label={t("bi.total_revenue")} value={formatCurrency(k.revenue)} icon={IconRevenue} tone="accent" sub={t("bi.total_revenue_sub")} />
+            <StatCard label={t("bi.volume_sold")} value={formatNumber(k.tonnage, " t")} icon={IconTonnage} tone="ink" sub={t("bi.volume_sold_sub")} />
+            <StatCard label={t("bi.avg_price")} value={formatCurrency(k.avg_price)} icon={IconAvgPrice} tone="ink" sub={t("bi.avg_price_sub")} />
+            <StatCard label={t("bi.conversion")} value={formatPercent(k.conversion_rate)} icon={IconConversion} tone="positive" sub={t("bi.conversion_sub")} />
           </div>
 
           {result!.byGrade.length > 0 && (
             <div className="grid gap-5 lg:grid-cols-2">
-              <div className="glass rounded-2xl p-5">
+              <div className="rounded-md border border-line bg-card p-5 shadow-[var(--shadow-1)]">
                 <div className="mb-4 flex items-center gap-2">
-                  <BarChart3 className="size-4 text-primary" />
-                  <h3 className="font-display text-sm font-semibold">{t("bi.tonnage_by_grade")}</h3>
+                  <IconAnalytics className="size-4 text-accent" />
+                  <h3 className="font-display text-base leading-tight tracking-tight text-ink">{t("bi.tonnage_by_grade")}</h3>
                 </div>
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={result!.byGrade} margin={{ top: 4, right: 8, bottom: 4, left: -12 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                    <XAxis dataKey="grade" tick={{ fill: "#8b90a8", fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fill: "#8b90a8", fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <Tooltip cursor={{ fill: "rgba(255,255,255,0.04)" }} content={<ChartTooltip formatter={(v: number) => formatNumber(v, " t")} />} />
-                    <Bar dataKey="tonnage" name="Tonnage" radius={[6, 6, 0, 0]} maxBarSize={48}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
+                    <XAxis dataKey="grade" tick={{ fill: tickFill, fontSize: 11 }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fill: tickFill, fontSize: 11 }} tickLine={false} axisLine={false} />
+                    <Tooltip cursor={{ fill: cursorFill }} content={<ChartTooltip formatter={(v: number) => formatNumber(v, " t")} />} />
+                    <Bar dataKey="tonnage" name="Tonnage" radius={[3, 3, 0, 0]} maxBarSize={48}>
                       {result!.byGrade.map((_, i) => (
-                        <Cell key={i} fill={GRADE_COLORS[i % GRADE_COLORS.length]} />
+                        <Cell key={i} fill={gradeColors[i % gradeColors.length]} />
                       ))}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
 
-              <div className="glass rounded-2xl p-5">
+              <div className="rounded-md border border-line bg-card p-5 shadow-[var(--shadow-1)]">
                 <div className="mb-4 flex items-center gap-2">
-                  <BarChart3 className="size-4 text-secondary" />
-                  <h3 className="font-display text-sm font-semibold">{t("bi.revenue_by_grade")}</h3>
+                  <IconAnalytics className="size-4 text-ink-muted" />
+                  <h3 className="font-display text-base leading-tight tracking-tight text-ink">{t("bi.revenue_by_grade")}</h3>
                 </div>
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={result!.byGrade} margin={{ top: 4, right: 8, bottom: 4, left: -12 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                    <XAxis dataKey="grade" tick={{ fill: "#8b90a8", fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fill: "#8b90a8", fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <Tooltip cursor={{ fill: "rgba(255,255,255,0.04)" }} content={<ChartTooltip formatter={(v: number) => formatCurrency(v)} />} />
-                    <Bar dataKey="revenue" name="Revenue" radius={[6, 6, 0, 0]} maxBarSize={48}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
+                    <XAxis dataKey="grade" tick={{ fill: tickFill, fontSize: 11 }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fill: tickFill, fontSize: 11 }} tickLine={false} axisLine={false} />
+                    <Tooltip cursor={{ fill: cursorFill }} content={<ChartTooltip formatter={(v: number) => formatCurrency(v)} />} />
+                    <Bar dataKey="revenue" name="Revenue" radius={[3, 3, 0, 0]} maxBarSize={48}>
                       {result!.byGrade.map((_, i) => (
-                        <Cell key={i} fill={GRADE_COLORS[(i + 1) % GRADE_COLORS.length]} />
+                        <Cell key={i} fill={gradeColors[(i + 1) % gradeColors.length]} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -168,21 +187,21 @@ export function BiPage() {
           )}
 
           {result!.rows.length > 0 && (
-            <div className="glass rounded-2xl p-5">
-              <div className="mb-4 flex items-center gap-2">
-                <Table2 className="size-4 text-accent" />
-                <h3 className="font-display text-sm font-semibold">{t("bi.sales_records")}</h3>
-                <span className="ml-auto text-xs text-muted-foreground">
+            <div className="rounded-md border border-line bg-card shadow-[var(--shadow-1)]">
+              <div className="flex items-center gap-2 border-b border-line px-5 py-4">
+                <IconTable className="size-4 text-ink-muted" />
+                <h3 className="font-display text-base leading-tight tracking-tight text-ink">{t("bi.sales_records")}</h3>
+                <span className="ms-auto text-[13px] text-ink-muted">
                   {result!.rows.length} {t("common.records")}
                 </span>
               </div>
-              <div className="max-h-96 overflow-auto rounded-xl border border-white/[0.06]">
-                <table className="w-full text-left text-xs">
-                  <thead className="sticky top-0 bg-[#0c0c14]/95 backdrop-blur">
-                    <tr className="text-muted-foreground">
+              <div className="max-h-96 overflow-auto">
+                <table className="w-full text-start text-sm">
+                  <thead className="sticky top-0 bg-bg-subtle">
+                    <tr className="text-ink-subtle">
                       {[t("common.date"), t("common.customer"), t("common.grade"), t("common.tonnage"), t("common.unit_price"), t("common.status")].map(
                         (h) => (
-                          <th key={h} className="px-3 py-2.5 font-semibold uppercase tracking-wide">
+                          <th key={h} className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em]">
                             {h}
                           </th>
                         ),
@@ -193,33 +212,33 @@ export function BiPage() {
                     {result!.rows.map((row, i) => (
                       <tr
                         key={i}
-                        className="border-t border-white/[0.04] transition-colors hover:bg-white/[0.03]"
+                        className="border-t border-line transition-colors hover:bg-bg-subtle"
                       >
-                        <td className="px-3 py-2.5 text-muted-foreground">{row.date || "—"}</td>
-                        <td className="px-3 py-2.5 font-medium text-foreground">
+                        <td className="px-4 py-2.5 text-ink-muted">{row.date || "—"}</td>
+                        <td className="px-4 py-2.5 font-medium text-ink">
                           {row.customer || "—"}
                         </td>
-                        <td className="px-3 py-2.5">
-                          <span className="rounded-md bg-secondary/15 px-2 py-0.5 font-mono text-[10px] text-secondary">
+                        <td className="px-4 py-2.5">
+                          <Badge variant="outline" size="sm" className="font-mono">
                             {row["rebar grade"] || "—"}
-                          </span>
+                          </Badge>
                         </td>
-                        <td className="px-3 py-2.5 tabular-nums">{formatNumber(Number(row.tonnage), " t")}</td>
-                        <td className="px-3 py-2.5 tabular-nums text-primary">
+                        <td className="px-4 py-2.5 tabular-nums text-ink">{formatNumber(Number(row.tonnage), " t")}</td>
+                        <td className="px-4 py-2.5 tabular-nums text-ink">
                           {formatCurrency(Number(row["unit price"]))}
                         </td>
-                        <td className="px-3 py-2.5">
-                          <span
-                            className={cn(
-                              "rounded-md px-2 py-0.5 text-[10px] font-medium",
+                        <td className="px-4 py-2.5">
+                          <Badge
+                            variant={
                               String(row.status).toLowerCase().includes("close") ||
-                                String(row.status).toLowerCase().includes("convert")
-                                ? "bg-success/15 text-success"
-                                : "bg-muted text-muted-foreground",
-                            )}
+                              String(row.status).toLowerCase().includes("convert")
+                                ? "positive"
+                                : "neutral"
+                            }
+                            size="sm"
                           >
                             {row.status || "—"}
-                          </span>
+                          </Badge>
                         </td>
                       </tr>
                     ))}
@@ -232,11 +251,9 @@ export function BiPage() {
       )}
 
       {!loading && !result && (
-        <div className="glass flex flex-col items-center gap-3 rounded-2xl py-16 text-center">
-          <Loader2 className="size-7 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">
-            {t("bi.empty_state")}
-          </p>
+        <div className="flex flex-col items-center gap-3 rounded-md border border-line bg-card py-16 text-center shadow-[var(--shadow-1)]">
+          <IconLoader className="size-7 text-ink-subtle" />
+          <p className="text-sm text-ink-muted">{t("bi.empty_state")}</p>
         </div>
       )}
     </div>

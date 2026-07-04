@@ -2,7 +2,7 @@
 
 import { useLocale } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
-import { Globe } from "lucide-react";
+import { IconGlobe } from "@/components/ui/icons";
 
 export function LanguageSwitcher() {
   const locale = useLocale();
@@ -17,10 +17,10 @@ export function LanguageSwitcher() {
   return (
     <button
       onClick={toggle}
-      className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
+      className="inline-flex items-center gap-1.5 rounded-sm border border-line bg-card px-2.5 py-1.5 text-[12px] font-medium text-ink-muted transition-colors hover:bg-bg-subtle hover:text-ink"
       title={locale === "en" ? "Switch to Farsi" : "Switch to English"}
     >
-      <Globe className="size-3.5" />
+      <IconGlobe className="size-3.5" />
       {locale === "en" ? "FA" : "EN"}
     </button>
   );

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useDropzone } from "react-dropzone";
 import { useTranslations } from "next-intl";
-import { UploadCloud, FileSpreadsheet } from "lucide-react";
+import { IconUpload, IconTable } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 
 export function FileDropzone({
@@ -41,29 +41,29 @@ export function FileDropzone({
     <div
       {...getRootProps()}
       className={cn(
-        "group flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition-all",
+        "group flex cursor-pointer flex-col items-center justify-center gap-3 rounded-md border border-dashed px-6 py-10 text-center transition-colors",
         isDragActive
-          ? "border-primary/60 bg-primary/[0.06]"
-          : "border-white/10 bg-white/[0.02] hover:border-primary/40 hover:bg-white/[0.04]",
+          ? "border-accent bg-accent-soft"
+          : "border-line-strong bg-bg-subtle hover:border-accent/50 hover:bg-bg-sunken",
       )}
     >
       <input {...getInputProps()} />
-      <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/15 text-primary transition-transform group-hover:scale-110">
+      <div className="flex size-11 items-center justify-center rounded-sm border border-line bg-card text-accent shadow-[var(--shadow-1)]">
         {selected.length ? (
-          <FileSpreadsheet className="size-6" />
+          <IconTable className="size-5" />
         ) : (
-          <UploadCloud className="size-6" />
+          <IconUpload className="size-5" />
         )}
       </div>
       {selected.length ? (
         <div className="text-sm">
-          <p className="font-semibold text-foreground">{selected.join(", ")}</p>
-          <p className="mt-0.5 text-xs text-success">{t("dropzone.ready")}</p>
+          <p className="font-medium text-ink">{selected.join(", ")}</p>
+          <p className="mt-0.5 text-[13px] text-positive">{t("dropzone.ready")}</p>
         </div>
       ) : (
         <div className="text-sm">
-          <p className="font-medium text-foreground">{label ?? t("dropzone.default_label")}</p>
-          {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
+          <p className="font-medium text-ink">{label ?? t("dropzone.default_label")}</p>
+          {hint && <p className="mt-0.5 text-[13px] text-ink-muted">{hint}</p>}
         </div>
       )}
     </div>

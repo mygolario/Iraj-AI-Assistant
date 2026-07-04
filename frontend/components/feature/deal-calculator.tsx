@@ -2,8 +2,14 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { motion } from "framer-motion";
-import { Calculator, TrendingUp, TrendingDown, Wallet, Percent, DollarSign } from "lucide-react";
+import {
+  IconCalculator,
+  IconTrendUp,
+  IconTrendDown,
+  IconAvgPrice,
+  IconPercent,
+  IconRevenue,
+} from "@/components/ui/icons";
 import { cn, formatCurrency, formatPercent } from "@/lib/utils";
 
 interface Result {
@@ -21,6 +27,9 @@ function compute(t: number, sp: number, pc: number, ov: number): Result {
   return { revenue, grossProfit, netProfit, margin };
 }
 
+const inputCls =
+  "h-10 w-full rounded-sm border border-line bg-bg-sunken px-3 text-sm font-medium text-ink outline-none transition-colors placeholder:text-ink-subtle focus:border-accent focus:bg-card";
+
 export function DealCalculator({ compact = false }: { compact?: boolean }) {
   const t = useTranslations();
   const [vals, setVals] = React.useState({
@@ -34,26 +43,32 @@ export function DealCalculator({ compact = false }: { compact?: boolean }) {
   const profitable = r.netProfit >= 0;
 
   const fields = [
-    { key: "tonnage" as const, label: t("calculator.tonnage"), suffix: "t", icon: Calculator },
-    { key: "salePrice" as const, label: t("calculator.sale_price"), suffix: "/t", icon: DollarSign },
-    { key: "purchaseCost" as const, label: t("calculator.purchase_cost"), suffix: "/t", icon: Wallet },
-    { key: "overhead" as const, label: t("calculator.fixed_overheads"), suffix: "", icon: Percent },
+    { key: "tonnage" as const, label: t("calculator.tonnage"), suffix: "t", icon: IconCalculator },
+    { key: "salePrice" as const, label: t("calculator.sale_price"), suffix: "/t", icon: IconRevenue },
+    { key: "purchaseCost" as const, label: t("calculator.purchase_cost"), suffix: "/t", icon: IconAvgPrice },
+    { key: "overhead" as const, label: t("calculator.fixed_overheads"), suffix: "", icon: IconPercent },
   ];
 
   const stats = [
-    { label: t("calculator.total_revenue"), value: formatCurrency(r.revenue), icon: DollarSign, tone: "neutral" },
-    { label: t("calculator.gross_profit"), value: formatCurrency(r.grossProfit), icon: TrendingUp, tone: r.grossProfit >= 0 ? "up" : "down" },
-    { label: t("calculator.net_profit"), value: formatCurrency(r.netProfit), icon: r.netProfit >= 0 ? TrendingUp : TrendingDown, tone: profitable ? "up" : "down" },
-    { label: t("calculator.net_margin"), value: formatPercent(r.margin), icon: Percent, tone: profitable ? "up" : "down" },
+    { label: t("calculator.total_revenue"), value: formatCurrency(r.revenue), icon: IconRevenue, tone: "neutral" as const },
+    { label: t("calculator.gross_profit"), value: formatCurrency(r.grossProfit), icon: r.grossProfit >= 0 ? IconTrendUp : IconTrendDown, tone: r.grossProfit >= 0 ? "up" as const : "down" as const },
+    { label: t("calculator.net_profit"), value: formatCurrency(r.netProfit), icon: r.netProfit >= 0 ? IconTrendUp : IconTrendDown, tone: profitable ? "up" as const : "down" as const },
+    { label: t("calculator.net_margin"), value: formatPercent(r.margin), icon: IconPercent, tone: profitable ? "up" as const : "down" as const },
   ];
+
+  const statText = {
+    up: "text-positive",
+    down: "text-negative",
+    neutral: "text-ink",
+  };
 
   return (
     <div className="flex flex-col gap-4">
       <div className={cn("grid gap-3", compact ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-4")}>
         {fields.map((f) => (
           <label key={f.key} className="flex flex-col gap-1.5">
-            <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <f.icon className="size-3.5" />
+            <span className="flex items-center gap-1.5 text-[12px] font-medium text-ink-muted">
+              <f.icon className="size-3.5 text-ink-subtle" />
               {f.label}
             </span>
             <div className="relative">
@@ -64,10 +79,10 @@ export function DealCalculator({ compact = false }: { compact?: boolean }) {
                 onChange={(e) =>
                   setVals((v) => ({ ...v, [f.key]: Number(e.target.value) || 0 }))
                 }
-                className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 text-sm font-semibold text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/60 focus:bg-white/[0.05] focus:ring-2 focus:ring-primary/20"
+                className={inputCls}
               />
               {f.suffix && (
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                <span className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-[12px] text-ink-subtle">
                   {f.suffix}
                 </span>
               )}
@@ -77,54 +92,43 @@ export function DealCalculator({ compact = false }: { compact?: boolean }) {
       </div>
 
       <div className={cn("grid gap-3", compact ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-4")}>
-        {stats.map((s, i) => (
-          <motion.div
+        {stats.map((s) => (
+          <div
             key={s.label}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06 }}
             className={cn(
-              "glass rounded-xl p-3.5",
-              s.tone === "up" && "ring-1 ring-success/20",
-              s.tone === "down" && "ring-1 ring-destructive/20",
+              "rounded-sm border bg-card p-3.5 shadow-[var(--shadow-1)]",
+              s.tone === "up" && "border-line",
+              s.tone === "down" && "border-line",
+              s.tone === "neutral" && "border-line",
             )}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-subtle">
                 {s.label}
               </span>
-              <s.icon
-                className={cn(
-                  "size-3.5",
-                  s.tone === "up" && "text-success",
-                  s.tone === "down" && "text-destructive",
-                  s.tone === "neutral" && "text-muted-foreground",
-                )}
-              />
+              <s.icon className={cn("size-3.5", statText[s.tone])} />
             </div>
             <div
               className={cn(
-                "mt-1.5 font-display text-lg font-bold tabular-nums",
-                s.tone === "up" && "text-success",
-                s.tone === "down" && "text-destructive",
-                s.tone === "neutral" && "text-foreground",
+                "mt-2 font-display text-xl leading-none tracking-tight tabular-nums",
+                statText[s.tone],
               )}
             >
               {s.value}
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
 
       <div
         className={cn(
-          "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium",
+          "flex items-center gap-2 rounded-sm border px-4 py-2.5 text-sm font-medium",
           profitable
-            ? "bg-success/10 text-success"
-            : "bg-destructive/10 text-destructive",
+            ? "border-line bg-bg-subtle text-positive"
+            : "border-line bg-bg-subtle text-negative",
         )}
       >
-        {profitable ? <TrendingUp className="size-4" /> : <TrendingDown className="size-4" />}
+        {profitable ? <IconTrendUp className="size-4" /> : <IconTrendDown className="size-4" />}
         {profitable ? t("calculator.profitable") : t("calculator.loss")}
       </div>
     </div>

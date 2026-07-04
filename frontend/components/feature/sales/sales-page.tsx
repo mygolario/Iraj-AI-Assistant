@@ -5,15 +5,15 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import {
-  FileText,
-  Map,
-  Loader2,
-  Download,
-  Sparkles,
-  PenLine,
-  Route,
-} from "lucide-react";
+  IconDocument,
+  IconRoute,
+  IconLoader,
+  IconDownload,
+  IconSpark,
+  IconDraft,
+} from "@/components/ui/icons";
 import { api } from "@/lib/api";
+import { Button } from "@/components/ui/button";
 import { cn, downloadText } from "@/lib/utils";
 import { Markdown } from "@/components/ui/markdown";
 
@@ -37,14 +37,14 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <span className="text-[12px] font-medium text-ink-muted">{label}</span>
       {children}
     </label>
   );
 }
 
 const inputCls =
-  "h-10 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/60 focus:ring-2 focus:ring-primary/20";
+  "h-10 rounded-sm border border-line bg-bg-sunken px-3 text-sm text-ink outline-none transition-colors placeholder:text-ink-subtle focus:border-accent focus:bg-card";
 
 function ContractDrafter() {
   const t = useTranslations();
@@ -82,10 +82,10 @@ function ContractDrafter() {
 
   return (
     <div className="grid gap-5 lg:grid-cols-[380px_1fr]">
-      <div className="glass rounded-2xl p-5">
+      <div className="rounded-md border border-line bg-card p-5 shadow-[var(--shadow-1)]">
         <div className="mb-4 flex items-center gap-2">
-          <PenLine className="size-4 text-primary" />
-          <h3 className="font-display text-sm font-semibold">{t("sales.contract_details")}</h3>
+          <IconDraft className="size-4 text-accent" />
+          <h3 className="font-display text-base leading-tight tracking-tight text-ink">{t("sales.contract_details")}</h3>
         </div>
         <div className="grid gap-3">
           <Field label={t("sales.buyer_company")}>
@@ -97,7 +97,7 @@ function ContractDrafter() {
           <Field label={t("sales.rebar_grade")}>
             <select value={grade} onChange={(e) => setGrade(e.target.value)} className={cn(inputCls, "cursor-pointer")}>
               {CONTRACT_GRADES.map((g) => (
-                <option key={g} value={g} className="bg-[#12121d]">{g}</option>
+                <option key={g} value={g}>{g}</option>
               ))}
             </select>
           </Field>
@@ -109,40 +109,33 @@ function ContractDrafter() {
               <input type="number" min={1} className={inputCls} value={price} onChange={(e) => setPrice(Number(e.target.value) || 0)} />
             </Field>
           </div>
-          <button
-            onClick={generate}
-            disabled={loading}
-            className="mt-1 flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-secondary text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:opacity-50"
-          >
-            {loading ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+          <Button onClick={generate} disabled={loading} className="mt-1 h-10">
+            {loading ? <IconLoader className="size-4 animate-spin" /> : <IconSpark className="size-4" />}
             {loading ? t("sales.drafting") : t("sales.generate_contract")}
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className="glass gradient-border rounded-2xl p-5">
+      <div className="rounded-md border border-line bg-card p-5 shadow-[var(--shadow-1)]">
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="font-display text-sm font-semibold">{t("sales.formatted_draft")}</h3>
+          <h3 className="font-display text-base leading-tight tracking-tight text-ink">{t("sales.formatted_draft")}</h3>
           {md && (
-            <button
-              onClick={() => downloadText(`Sales_Contract_${buyer.replace(/\s+/g, "_")}.md`, md)}
-              className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-white/5"
-            >
-              <Download className="size-3.5" />
+            <Button variant="outline" size="sm" onClick={() => downloadText(`Sales_Contract_${buyer.replace(/\s+/g, "_")}.md`, md)}>
+              <IconDownload className="size-3.5" />
               {t("common.download_md")}
-            </button>
+            </Button>
           )}
         </div>
         {loading ? (
           <div className="space-y-2.5">
             {[0, 1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-4 animate-pulse rounded bg-white/[0.04]" style={{ width: `${90 - i * 12}%` }} />
+              <div key={i} className="skeleton h-4 rounded-sm" style={{ width: `${90 - i * 12}%` }} />
             ))}
           </div>
         ) : md ? (
           <Markdown>{md}</Markdown>
         ) : (
-          <p className="py-10 text-center text-sm text-muted-foreground">
+          <p className="py-10 text-center text-sm text-ink-muted">
             {t("sales.contract_empty")}
           </p>
         )}
@@ -178,10 +171,10 @@ function RoadmapGenerator() {
 
   return (
     <div className="grid gap-5 lg:grid-cols-[380px_1fr]">
-      <div className="glass rounded-2xl p-5">
+      <div className="rounded-md border border-line bg-card p-5 shadow-[var(--shadow-1)]">
         <div className="mb-4 flex items-center gap-2">
-          <Route className="size-4 text-secondary" />
-          <h3 className="font-display text-sm font-semibold">{t("sales.roadmap_inputs")}</h3>
+          <IconRoute className="size-4 text-accent" />
+          <h3 className="font-display text-base leading-tight tracking-tight text-ink">{t("sales.roadmap_inputs")}</h3>
         </div>
         <div className="grid gap-3">
           <Field label={t("sales.company_name")}>
@@ -190,40 +183,33 @@ function RoadmapGenerator() {
           <Field label={t("sales.target_market")}>
             <input className={inputCls} value={market} onChange={(e) => setMarket(e.target.value)} placeholder={t("sales.target_placeholder")} />
           </Field>
-          <button
-            onClick={generate}
-            disabled={loading}
-            className="mt-1 flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-secondary to-primary text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:opacity-50"
-          >
-            {loading ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+          <Button onClick={generate} disabled={loading} className="mt-1 h-10">
+            {loading ? <IconLoader className="size-4 animate-spin" /> : <IconSpark className="size-4" />}
             {loading ? t("sales.compiling") : t("sales.compile_roadmap")}
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className="glass gradient-border rounded-2xl p-5">
+      <div className="rounded-md border border-line bg-card p-5 shadow-[var(--shadow-1)]">
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="font-display text-sm font-semibold">{t("sales.transformation_roadmap")}</h3>
+          <h3 className="font-display text-base leading-tight tracking-tight text-ink">{t("sales.transformation_roadmap")}</h3>
           {md && (
-            <button
-              onClick={() => downloadText(`Sales_Roadmap_${company.replace(/\s+/g, "_")}.md`, md)}
-              className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-white/5"
-            >
-              <Download className="size-3.5" />
+            <Button variant="outline" size="sm" onClick={() => downloadText(`Sales_Roadmap_${company.replace(/\s+/g, "_")}.md`, md)}>
+              <IconDownload className="size-3.5" />
               {t("common.download_md")}
-            </button>
+            </Button>
           )}
         </div>
         {loading ? (
           <div className="space-y-2.5">
             {[0, 1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-4 animate-pulse rounded bg-white/[0.04]" style={{ width: `${90 - i * 12}%` }} />
+              <div key={i} className="skeleton h-4 rounded-sm" style={{ width: `${90 - i * 12}%` }} />
             ))}
           </div>
         ) : md ? (
           <Markdown>{md}</Markdown>
         ) : (
-          <p className="py-10 text-center text-sm text-muted-foreground">
+          <p className="py-10 text-center text-sm text-ink-muted">
             {t("sales.roadmap_empty")}
           </p>
         )}
@@ -235,27 +221,27 @@ function RoadmapGenerator() {
 export function SalesPage() {
   const t = useTranslations();
   const [tab, setTab] = React.useState<Tab>("contract");
-  const tabs: { id: Tab; label: string; icon: typeof FileText }[] = [
-    { id: "contract", label: t("sales.contract_drafter"), icon: FileText },
-    { id: "roadmap", label: t("sales.sales_roadmap"), icon: Map },
+  const tabs: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { id: "contract", label: t("sales.contract_drafter"), icon: IconDocument },
+    { id: "roadmap", label: t("sales.sales_roadmap"), icon: IconRoute },
   ];
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="glass inline-flex w-fit gap-1 rounded-xl p-1">
+      <div className="inline-flex w-fit gap-1 rounded-sm border border-line bg-card p-1 shadow-[var(--shadow-1)]">
         {tabs.map((tabItem) => (
           <button
             key={tabItem.id}
             onClick={() => setTab(tabItem.id)}
             className={cn(
-              "relative flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors",
-              tab === tabItem.id ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+              "relative flex items-center gap-2 rounded-sm px-4 py-2 text-sm font-medium transition-colors",
+              tab === tabItem.id ? "text-accent-ink" : "text-ink-muted hover:text-ink",
             )}
           >
             {tab === tabItem.id && (
               <motion.span
                 layoutId="sales-tab"
-                className="absolute inset-0 rounded-lg bg-white/[0.06] ring-1 ring-white/10"
+                className="absolute inset-0 rounded-sm bg-accent-soft"
                 transition={{ type: "spring", stiffness: 400, damping: 32 }}
               />
             )}
@@ -264,14 +250,9 @@ export function SalesPage() {
           </button>
         ))}
       </div>
-      <motion.div
-        key={tab}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
+      <div key={tab} className="transition-opacity duration-200">
         {tab === "contract" ? <ContractDrafter /> : <RoadmapGenerator />}
-      </motion.div>
+      </div>
     </div>
   );
 }

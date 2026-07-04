@@ -1,11 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { useTranslations } from "next-intl";
-import { useLocale } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import * as Dialog from "@radix-ui/react-dialog";
-import { PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
+import { IconPanelCollapse, IconPanelExpand, IconClose } from "@/components/ui/icons";
 import { getNavItems } from "./nav-config";
 import { cn } from "@/lib/utils";
 
@@ -13,16 +12,15 @@ function Brand({ collapsed }: { collapsed: boolean }) {
   const t = useTranslations();
   return (
     <Link href="/" className="flex items-center gap-3 px-2 py-1">
-      <div className="relative flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary shadow-[0_4px_14px_-4px_rgba(99,102,241,0.7)]">
-        <span className="font-display text-lg font-extrabold text-white">I</span>
-        <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-accent shadow-[0_0_8px_2px_rgba(34,211,238,0.6)]" />
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-sm border border-line-strong bg-card shadow-[var(--shadow-1)]">
+        <span className="font-display text-lg leading-none text-accent">I</span>
       </div>
       {!collapsed && (
         <div className="flex flex-col leading-none">
-          <span className="font-display text-sm font-bold tracking-tight text-foreground">
+          <span className="font-display text-sm leading-tight tracking-tight text-ink">
             {t("sidebar.brand")}
           </span>
-          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          <span className="mt-1 text-[11px] font-medium uppercase tracking-[0.12em] text-ink-subtle">
             {t("sidebar.subtitle")}
           </span>
         </div>
@@ -44,7 +42,7 @@ function NavLinks({
   const items = getNavItems(t);
 
   return (
-    <nav className="flex flex-col gap-1">
+    <nav className="flex flex-col gap-0.5">
       {items.map((item) => {
         const href = item.href;
         const active =
@@ -59,22 +57,23 @@ function NavLinks({
             onClick={onNavigate}
             title={collapsed ? item.label : undefined}
             className={cn(
-              "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+              "group relative flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm font-medium transition-colors duration-150",
               active
-                ? "bg-white/[0.06] text-foreground"
-                : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+                ? "bg-accent-soft text-accent-ink"
+                : "text-ink-muted hover:bg-bg-subtle hover:text-ink",
               collapsed && "justify-center",
             )}
           >
             {active && (
-              <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-primary to-secondary" />
+              <span
+                aria-hidden
+                className="absolute inset-y-1.5 start-0 w-0.5 rounded-full bg-accent"
+              />
             )}
             <Icon
               className={cn(
                 "size-[18px] shrink-0 transition-colors",
-                active
-                  ? "text-primary"
-                  : "text-muted-foreground group-hover:text-foreground",
+                active ? "text-accent" : "text-ink-subtle group-hover:text-ink",
               )}
             />
             {!collapsed && <span className="truncate">{item.label}</span>}
@@ -96,26 +95,26 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "sticky top-0 hidden h-screen shrink-0 flex-col border-r border-white/[0.06] bg-black/20 backdrop-blur-xl transition-[width] duration-300 lg:flex",
+        "sticky top-0 hidden h-screen shrink-0 flex-col border-e border-line bg-bg-subtle transition-[width] duration-300 lg:flex",
         collapsed ? "w-[72px]" : "w-64",
       )}
     >
-      <div className="flex h-16 items-center justify-between px-3">
+      <div className="flex h-16 items-center border-b border-line px-3">
         <Brand collapsed={collapsed} />
       </div>
-      <div className="flex-1 overflow-y-auto px-3 py-2">
+      <div className="flex-1 overflow-y-auto px-3 py-4">
         <NavLinks collapsed={collapsed} />
       </div>
-      <div className="border-t border-white/[0.06] p-3">
+      <div className="border-t border-line p-3">
         <button
           onClick={onToggleCollapse}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
+          className="flex w-full items-center gap-3 rounded-sm px-3 py-2.5 text-sm font-medium text-ink-muted transition-colors hover:bg-bg-subtle hover:text-ink"
         >
           {collapsed ? (
-            <PanelLeftOpen className="size-[18px] mx-auto" />
+            <IconPanelExpand className="size-[18px] mx-auto" />
           ) : (
             <>
-              <PanelLeftClose className="size-[18px]" />
+              <IconPanelCollapse className="size-[18px]" />
               <span>{t("common.collapse")}</span>
             </>
           )}
@@ -135,15 +134,15 @@ export function MobileSidebar({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <Dialog.Content className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-white/10 bg-[#0c0c14]/95 backdrop-blur-2xl outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left">
-          <div className="flex h-16 items-center justify-between pr-3">
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-ink/30 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <Dialog.Content className="fixed inset-y-0 start-0 z-50 flex w-72 flex-col border-e border-line bg-bg-subtle shadow-[var(--shadow-3)] outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left">
+          <div className="flex h-16 items-center justify-between border-b border-line pe-3">
             <Brand collapsed={false} />
-            <Dialog.Close className="rounded-lg p-2 text-muted-foreground hover:bg-white/5 hover:text-foreground">
-              <X className="size-5" />
+            <Dialog.Close className="rounded-sm p-2 text-ink-muted transition-colors hover:bg-bg-elevated hover:text-ink">
+              <IconClose className="size-5" />
             </Dialog.Close>
           </div>
-          <div className="flex-1 overflow-y-auto px-3 py-2">
+          <div className="flex-1 overflow-y-auto px-3 py-4">
             <NavLinks collapsed={false} onNavigate={() => onOpenChange(false)} />
           </div>
         </Dialog.Content>

@@ -1,21 +1,22 @@
 "use client";
 
 import * as React from "react";
-import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import {
-  Library,
-  Search,
-  FileText,
-  Download,
-  FlaskConical,
-  CheckCircle2,
-  XCircle,
-  Loader2,
-} from "lucide-react";
+  IconStandards,
+  IconSearch,
+  IconDatasheet,
+  IconDownload,
+  IconBeaker,
+  IconCheck,
+  IconCross,
+  IconLoader,
+} from "@/components/ui/icons";
 import { api } from "@/lib/api";
 import type { DatasheetSpec, RagResult } from "@/lib/types";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { downloadText } from "@/lib/utils";
 import { FileDropzone } from "@/components/ui/file-dropzone";
 
@@ -27,6 +28,9 @@ const GRADE_OPTIONS = [
   "GB/T 1499.2",
   "Custom",
 ];
+
+const inputCls =
+  "h-10 rounded-sm border border-line bg-bg-sunken px-3 text-sm text-ink outline-none transition-colors placeholder:text-ink-subtle focus:border-accent focus:bg-card";
 
 export function StandardsPage() {
   const t = useTranslations();
@@ -118,17 +122,17 @@ export function StandardsPage() {
             label={t("standards.upload_label")}
             hint={t("standards.upload_hint")}
           />
-          <div className="glass rounded-2xl p-4">
+          <div className="rounded-md border border-line bg-card p-4 shadow-[var(--shadow-1)]">
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 text-sm font-semibold">
-                <Library className="size-4 text-secondary" />
+              <span className="flex items-center gap-2 text-sm font-medium text-ink">
+                <IconStandards className="size-4 text-accent" />
                 {t("standards.index_status")}
               </span>
               {indexing ? (
-                <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                <IconLoader className="size-4 animate-spin text-ink-subtle" />
               ) : (
-                <span className="flex items-center gap-1.5 text-xs text-success">
-                  <CheckCircle2 className="size-3.5" />
+                <span className="flex items-center gap-1.5 text-[13px] text-positive">
+                  <IconCheck className="size-3.5" />
                   {records} {t("common.passages")}
                 </span>
               )}
@@ -136,81 +140,72 @@ export function StandardsPage() {
             {files.length > 0 ? (
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {files.map((f) => (
-                  <span
-                    key={f}
-                    className="rounded-md bg-secondary/15 px-2 py-1 font-mono text-[10px] text-secondary"
-                  >
+                  <Badge key={f} variant="neutral" size="sm" className="font-mono">
                     {f}
-                  </span>
+                  </Badge>
                 ))}
               </div>
             ) : (
-              <p className="mt-3 text-xs text-muted-foreground">
+              <p className="mt-3 text-[13px] text-ink-muted">
                 {t("standards.no_standards")}
               </p>
             )}
           </div>
         </div>
 
-        <div className="glass gradient-border rounded-2xl p-5">
+        <div className="rounded-md border border-line bg-card p-5 shadow-[var(--shadow-1)]">
           <div className="mb-4 flex items-center gap-2">
-            <Search className="size-4 text-primary" />
-            <h3 className="font-display text-sm font-semibold">{t("standards.semantic_query")}</h3>
+            <IconSearch className="size-4 text-accent" />
+            <h3 className="font-display text-base leading-tight tracking-tight text-ink">{t("standards.semantic_query")}</h3>
           </div>
           <form onSubmit={handleSearch} className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <IconSearch className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-ink-subtle" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("standards.search_placeholder")}
-              className="h-11 w-full rounded-xl border border-white/10 bg-white/[0.03] pl-9 pr-28 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+              className="h-11 w-full rounded-sm border border-line bg-bg-sunken ps-9 pe-28 text-sm text-ink outline-none transition-colors placeholder:text-ink-subtle focus:border-accent focus:bg-card"
             />
-            <button
+            <Button
               type="submit"
               disabled={searching}
-              className="absolute right-1.5 top-1.5 flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+              size="sm"
+              className="absolute end-1.5 top-1.5"
             >
-              {searching ? <Loader2 className="size-3.5 animate-spin" /> : <Search className="size-3.5" />}
+              {searching ? <IconLoader className="size-3.5 animate-spin" /> : <IconSearch className="size-3.5" />}
               {t("common.search")}
-            </button>
+            </Button>
           </form>
 
           <div className="mt-4 space-y-2.5">
             {searching &&
               [0, 1, 2].map((i) => (
-                <div key={i} className="h-20 animate-pulse rounded-xl bg-white/[0.04]" />
+                <div key={i} className="skeleton h-20 rounded-sm" />
               ))}
             {!searching && results && results.length === 0 && (
-              <div className="flex flex-col items-center gap-2 rounded-xl bg-white/[0.03] py-8 text-center">
-                <XCircle className="size-6 text-muted-foreground/50" />
-                <p className="text-sm text-muted-foreground">
-                  {t("standards.no_matches")}
-                </p>
+              <div className="flex flex-col items-center gap-2 rounded-sm border border-line bg-bg-subtle py-8 text-center">
+                <IconCross className="size-6 text-ink-subtle" />
+                <p className="text-sm text-ink-muted">{t("standards.no_matches")}</p>
               </div>
             )}
             {!searching &&
               results &&
               results.map((r, i) => (
-                <motion.div
+                <div
                   key={i}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="rounded-xl border-l-2 border-primary/50 bg-white/[0.03] p-3.5"
+                  className="rounded-sm border-s-2 border-line-strong bg-bg-subtle p-3.5"
                 >
                   <div className="mb-1.5 flex items-center justify-between">
-                    <span className="rounded-md bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                      {r.metadata.standard}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
+                    <Badge variant="accent" size="sm">{r.metadata.standard}</Badge>
+                    <span className="text-[11px] text-ink-subtle">
                       {r.metadata.source} · p.{r.metadata.page} · score {r.score}
                     </span>
                   </div>
-                  <p className="text-xs leading-relaxed text-muted-foreground">{r.text}</p>
-                </motion.div>
+                  <p className="text-[13px] leading-relaxed text-ink-muted">{r.text}</p>
+                </div>
               ))}
             {!searching && !results && (
-              <p className="py-6 text-center text-xs text-muted-foreground">
+              <p className="py-6 text-center text-[13px] text-ink-muted">
                 {t("standards.results_hint")}
               </p>
             )}
@@ -218,82 +213,73 @@ export function StandardsPage() {
         </div>
       </div>
 
-      <div className="glass gradient-border rounded-2xl p-5">
+      <div className="rounded-md border border-line bg-card p-5 shadow-[var(--shadow-1)]">
         <div className="mb-4 flex items-center gap-2">
-          <FlaskConical className="size-4 text-accent" />
-          <h3 className="font-display text-sm font-semibold">{t("standards.datasheet_generator")}</h3>
-          <span className="ml-auto text-[10px] text-muted-foreground">
+          <IconBeaker className="size-4 text-accent" />
+          <h3 className="font-display text-base leading-tight tracking-tight text-ink">{t("standards.datasheet_generator")}</h3>
+          <span className="ms-auto text-[11px] text-ink-subtle">
             {t("standards.datasheet_disclaimer")}
           </span>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-muted-foreground">{t("standards.rebar_grade")}</span>
+            <span className="text-[12px] font-medium text-ink-muted">{t("standards.rebar_grade")}</span>
             <select
               value={grade}
               onChange={(e) => setGrade(e.target.value)}
-              className="h-10 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-sm text-foreground outline-none focus:border-accent/60"
+              className={inputCls + " cursor-pointer"}
             >
               {GRADE_OPTIONS.map((g) => (
-                <option key={g} value={g} className="bg-[#12121d]">
-                  {g}
-                </option>
+                <option key={g} value={g}>{g}</option>
               ))}
             </select>
           </label>
           {grade === "Custom" && (
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-muted-foreground">{t("standards.custom_grade")}</span>
+              <span className="text-[12px] font-medium text-ink-muted">{t("standards.custom_grade")}</span>
               <input
                 value={customGrade}
                 onChange={(e) => setCustomGrade(e.target.value)}
                 placeholder={t("standards.custom_placeholder")}
-                className="h-10 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-sm text-foreground outline-none focus:border-accent/60"
+                className={inputCls}
               />
             </label>
           )}
           <label className="flex flex-col gap-1.5 sm:col-span-1">
-            <span className="text-xs font-medium text-muted-foreground">{t("standards.manufacturer")}</span>
+            <span className="text-[12px] font-medium text-ink-muted">{t("standards.manufacturer")}</span>
             <input
               value={company}
               onChange={(e) => setCompany(e.target.value)}
               placeholder={t("standards.company_name")}
-              className="h-10 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-accent/60"
+              className={inputCls}
             />
           </label>
-          <button
+          <Button
             onClick={handleCompile}
             disabled={compiling}
-            className="flex h-10 items-center justify-center gap-2 self-end rounded-xl bg-gradient-to-r from-primary to-secondary px-4 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+            className="h-10 self-start sm:self-end"
           >
-            {compiling ? <Loader2 className="size-4 animate-spin" /> : <FileText className="size-4" />}
+            {compiling ? <IconLoader className="size-4 animate-spin" /> : <IconDatasheet className="size-4" />}
             {t("common.compile")}
-          </button>
+          </Button>
         </div>
 
         {datasheet && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-4 rounded-xl border border-white/10 bg-white/[0.02] p-4"
-          >
+          <div className="mt-4 rounded-sm border border-line bg-bg-subtle p-4">
             {datasheet.available ? (
               <>
                 <div className="mb-3 flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-sm font-semibold text-success">
-                    <CheckCircle2 className="size-4" />
+                  <span className="flex items-center gap-2 text-sm font-medium text-positive">
+                    <IconCheck className="size-4" />
                     {t("standards.datasheet_compiled", { count: datasheet.sources.length })}
                   </span>
-                  <button
-                    onClick={downloadDatasheet}
-                    className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-white/5"
-                  >
-                    <Download className="size-3.5" />
+                  <Button variant="outline" size="sm" onClick={downloadDatasheet}>
+                    <IconDownload className="size-3.5" />
                     {t("common.download_md")}
-                  </button>
+                  </Button>
                 </div>
-                <div className="overflow-hidden rounded-lg border border-white/10">
-                  <table className="w-full text-left text-xs">
+                <div className="overflow-hidden rounded-sm border border-line">
+                  <table className="w-full text-start text-sm">
                     <tbody>
                       {[
                         [t("common.grade"), datasheet.grade],
@@ -302,11 +288,11 @@ export function StandardsPage() {
                         [t("standards.sizes_available"), datasheet.size_range ?? "N/A"],
                         [t("standards.chemical_composition"), datasheet.chemical_composition ?? "N/A"],
                       ].map(([k, v]) => (
-                        <tr key={k} className="border-b border-white/[0.06] last:border-0">
-                          <td className="bg-white/[0.04] px-3 py-2 font-semibold text-muted-foreground">
+                        <tr key={k} className="border-b border-line last:border-0">
+                          <td className="bg-bg-sunken px-3 py-2 font-medium text-ink-muted">
                             {k}
                           </td>
-                          <td className="px-3 py-2 text-foreground">{v}</td>
+                          <td className="px-3 py-2 text-ink">{v}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -314,12 +300,12 @@ export function StandardsPage() {
                 </div>
               </>
             ) : (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <XCircle className="size-4 text-destructive" />
+              <div className="flex items-center gap-2 text-sm text-negative">
+                <IconCross className="size-4" />
                 {t("standards.spec_not_available", { grade: datasheet.grade })}
               </div>
             )}
-          </motion.div>
+          </div>
         )}
       </div>
     </div>

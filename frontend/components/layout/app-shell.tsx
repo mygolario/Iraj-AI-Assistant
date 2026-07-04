@@ -21,15 +21,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-background">
       <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapse} />
       <MobileSidebar open={mobileOpen} onOpenChange={setMobileOpen} />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header onMenuClick={() => setMobileOpen(true)} />
-        <div className="sticky top-16 z-20 border-b border-white/[0.04] bg-[#08080d]/60 px-4 py-2 backdrop-blur-md md:px-6">
+        <div className="sticky top-16 z-20 border-b border-line bg-background">
           <PriceTicker />
         </div>
-        <main className="flex-1 px-4 py-6 md:px-6 lg:px-8">{children}</main>
+        <main className="flex-1 px-4 py-8 md:px-6 lg:px-8">{children}</main>
       </div>
       <CopilotFab />
     </div>

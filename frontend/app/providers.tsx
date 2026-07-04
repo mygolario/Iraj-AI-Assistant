@@ -1,25 +1,31 @@
 "use client";
 
+import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
       {children}
       <Toaster
-        theme="dark"
+        theme="system"
         position="bottom-right"
-        richColors
         closeButton
         toastOptions={{
           style: {
-            background: "rgba(18, 18, 29, 0.85)",
-            backdropFilter: "blur(16px)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            color: "var(--foreground)",
+            background: "var(--bg-elevated)",
+            border: "1px solid var(--line)",
+            color: "var(--ink)",
+            borderRadius: "var(--radius-md)",
+            boxShadow: "var(--shadow-3)",
           },
         }}
       />
-    </>
+    </ThemeProvider>
   );
 }
