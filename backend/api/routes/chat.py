@@ -5,6 +5,7 @@ from fastapi.responses import StreamingResponse
 
 from api.schemas import ChatRequest
 from core.live_scraper import read_cached_prices
+from core.market_agents import read_briefing, read_last_ask
 from core.rag_engine import query_standards
 from core.sales_consultant import LLMError, consult_sales_stream
 
@@ -22,14 +23,35 @@ def _build_system_prompt(user_msg: str, language: str = "en") -> str:
         )
         context_parts.append(f"Relevant standards from RAG index:\n{rag_ctx}")
 
-    cached = read_cached_prices()
-    if cached:
-        priced = [c for c in cached if c.get("price")][:3]
-        if priced:
-            price_ctx = ", ".join(
-                f"{c['channel']}: {c['price']} {c['currency']}" for c in priced
-            )
-            context_parts.append(f"Latest live market prices: {price_ctx}")
+    briefing = read_briefing()
+    if briefing.get("summary"):
+        price_bits = []
+        for p in (briefing.get("prices") or [])[:5]:
+            if p.get("price") is not None:
+                price_bits.append(
+                    f"{p.get('label') or 'price'}: {p.get('price')} {p.get('currency')}"
+                )
+        brief_ctx = briefing["summary"]
+        if price_bits:
+            brief_ctx += "\nKey prices: " + "; ".join(price_bits)
+        context_parts.append(f"Live Market Intelligence briefing:\n{brief_ctx}")
+    else:
+        cached = read_cached_prices()
+        if cached:
+            priced = [c for c in cached if c.get("price")][:3]
+            if priced:
+                price_ctx = ", ".join(
+                    f"{c['channel']}: {c['price']} {c['currency']}" for c in priced
+                )
+                context_parts.append(f"Latest live market prices: {price_ctx}")
+
+    last_ask = read_last_ask()
+    if last_ask and last_ask.get("question"):
+        context_parts.append(
+            "Recent Market Notebook ask:\n"
+            f"Q: {last_ask.get('question')}\n"
+            f"A: {(last_ask.get('answer') or '')[:800]}"
+        )
 
     context_block = "\n\n".join(context_parts) if context_parts else "(no live context available)"
 
@@ -43,7 +65,8 @@ def _build_system_prompt(user_msg: str, language: str = "en") -> str:
     return (
         "You are Iraj Sales AI Copilot, assisting the Sales Manager of a steel rebar manufacturer. "
         "Provide professional, detailed, context-aware sales insights. "
-        "When relevant, reference the standards and live market data below. "
+        "When relevant, reference the standards and live market intelligence below. "
+        "You are linked to the Live Market notebook — use its briefing and latest research when helpful. "
         "If a question is outside your scope, say so clearly rather than guessing.\n\n"
         f"{lang_instruction}\n\n"
         f"{context_block}"

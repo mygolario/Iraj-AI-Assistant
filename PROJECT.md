@@ -19,9 +19,9 @@ Full-stack application: **Next.js 16** (App Router) frontend + **FastAPI** Pytho
 - **Core Engines:**
   1. **BI Engine** — Parses sales CSV/XLSX, computes KPIs (revenue, tonnage, avg price, conversion rate)
   2. **RAG Engine** — Indexes steel standard PDFs/texts, semantic search, datasheet generation
-  3. **Live Scraper** — Scrapes public Telegram channel previews, extracts price indicators
+  3. **Market Intelligence** — Sources library, Sonar Pro Fast/Deep research, briefing studio, structured price snapshots
   4. **Sales Consultant** — LLM-powered contract drafts and sales roadmaps (with streaming)
-  5. **Chat Copilot** — Context-aware AI assistant with RAG + live market price injection
+  5. **Chat Copilot** — Context-aware AI assistant with RAG + market notebook briefing injection
 
 ### Design System: Aurora Indigo
 - Near-black indigo void (`#08080d`)
@@ -50,6 +50,8 @@ Iraj-AI-Assistant/
 │   ├── core/
 │   │   ├── bi_engine.py         # KPI computation from spreadsheets
 │   │   ├── live_scraper.py      # Telegram scraper + cache
+│   │   ├── market_sources.py    # Market Sources Library ingest
+│   │   ├── market_agents.py     # Fast/Deep research, briefing, Sonar Pro
 │   │   ├── rag_engine.py        # RAG indexing and retrieval
 │   │   └── sales_consultant.py  # LLM generation (non-streaming + SSE)
 │   ├── cache/                   # Runtime scraper cache (gitignored)
@@ -92,9 +94,18 @@ Iraj-AI-Assistant/
 | POST | `/api/rag/query` | Semantic search across indexed standards |
 | POST | `/api/rag/datasheet` | Compile datasheet from RAG sources |
 | GET | `/api/rag/state` | Current index status (record count, files) |
-| GET | `/api/market/prices` | Cached live price feeds |
-| POST | `/api/market/scrape` | Run scraper on configured Telegram channels |
-| POST | `/api/market/arbitrage` | Compare internal avg price vs market index |
+| GET | `/api/market/prices` | Cached / structured live prices (ticker-compatible) |
+| POST | `/api/market/scrape` | Legacy Telegram scrape (+ registers sources) |
+| POST | `/api/market/arbitrage` | Smart vs Internal (explicit FX) |
+| GET/POST | `/api/market/sources` | Sources library list / add (JSON) |
+| POST | `/api/market/sources/upload` | Add file source (PDF/Excel/screenshot) |
+| DELETE | `/api/market/sources/{id}` | Remove source |
+| POST | `/api/market/sources/{id}/refresh` | Refresh one source |
+| POST | `/api/market/refresh` | Refresh refreshable sources |
+| GET/POST | `/api/market/briefing` | Read / build Studio briefing |
+| GET | `/api/market/snapshots` | Structured price history |
+| GET | `/api/market/last-ask` | Last Market Notebook Q&A |
+| POST | `/api/market/ask` | Fast/Deep research (SSE) |
 | POST | `/api/sales/contract` | Generate contract draft via LLM |
 | POST | `/api/sales/roadmap` | Generate sales roadmap via LLM |
 | POST | `/api/chat` | Stream AI copilot response (SSE) |
@@ -106,7 +117,7 @@ Iraj-AI-Assistant/
 | `/` | Dashboard — Bento command center (BI summary, prices preview, quick search, calculator) |
 | `/bi` | BI & KPIs — Upload spreadsheet, KPI cards, tonnage/revenue charts, records table |
 | `/standards` | Standards Finder — Index standards, semantic query, datasheet generator |
-| `/market` | Live Market Prices — Scraper config, pricing board, arbitrage check, deal calculator |
+| `/market` | Market Notebook — Ask (Fast/Deep), optional sources, Studio briefing |
 | `/sales` | Sales & Contracts — Contract drafter + sales roadmap generator (tabbed) |
 | `/chat` | AI Chat Copilot — SSE streaming chat with RAG + market context injection |
 

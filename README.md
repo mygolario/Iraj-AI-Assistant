@@ -8,7 +8,7 @@ Built with **Next.js 16** (App Router) + **FastAPI** backend, featuring an Auror
 
 - **BI & KPIs** — Upload sales spreadsheets, compute revenue/tonnage/price/conversion metrics, interactive charts
 - **Standards Finder** — Index steel standard PDFs, semantic search, technical datasheet generation
-- **Live Market Prices** — Scrape public Telegram channels for live pricing, arbitrage detection
+- **Live Market (Market Notebook)** — NotebookLM-style desk: Fast/Deep research via Sonar Pro (works with zero sources), optional Sources Library (Telegram, web, PDF, Excel, screenshots, paste, internal/competitor), Studio briefing + price digest, vs-internal comparison, Copilot-linked
 - **Sales & Contracts** — AI-powered contract drafting and sales roadmap generation
 - **AI Chat Copilot** — Context-aware assistant with RAG + live market data injection, SSE streaming
 
@@ -32,8 +32,8 @@ Open [http://localhost:3000](http://localhost:3000)
 ## Tech Stack
 
 - **Frontend:** Next.js 16, React 19, Tailwind CSS v4, Framer Motion, Recharts
-- **Backend:** Python, FastAPI, OpenRouter API (GPT-4o-mini)
-- **Design:** Aurora Indigo — dark glass morphism, indigo gradients, cyan accents
+- **Backend:** Python, FastAPI, OpenRouter API (Gemini Flash + Perplexity Sonar Pro for market web research)
+- **Design:** Fintech-Warm / Steel — copper accent, Instrument Serif display, warm paper surfaces
 
 ## Project Structure
 

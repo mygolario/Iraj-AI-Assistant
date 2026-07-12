@@ -67,10 +67,61 @@ export interface PriceFeed {
   date: string;
 }
 
+export interface MarketSource {
+  id: string;
+  type: string;
+  title: string;
+  url?: string | null;
+  filename?: string | null;
+  status: string;
+  error?: string | null;
+  chunk_count: number;
+  excerpt?: string;
+  meta?: Record<string, unknown>;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface MarketCitation {
+  title: string;
+  url?: string;
+  kind?: string;
+  source_id?: string;
+}
+
+export interface MarketPricePoint {
+  product?: string;
+  grade?: string | null;
+  size?: string | null;
+  price: number;
+  currency: Currency;
+  unit?: string;
+  region?: string | null;
+  as_of?: string;
+  label?: string;
+  source_id?: string | null;
+  source_title?: string | null;
+  raw?: string;
+  confidence?: number;
+}
+
+export interface MarketBriefing {
+  summary: string;
+  prices: MarketPricePoint[];
+  citations?: MarketCitation[];
+  updated_at?: string | null;
+  mode?: string | null;
+  source_count?: number;
+  web_used?: boolean;
+  watchlist?: { id: string; label: string; query?: string }[];
+}
+
 export interface ArbitrageResult {
   internal_avg: number;
+  internal_compared?: number;
   market_price: number;
   currency: Currency;
+  fx_rate?: number;
   deviation_pct: number;
   status: "opportunity" | "compliance" | "alert";
   message: string;
@@ -105,6 +156,8 @@ export interface SystemHealth {
   rag_files: number;
   rag_files_list: string[];
   cache_count: number;
+  market_sources?: number;
+  market_briefing_at?: string | null;
   api_key_configured: boolean;
 }
 

@@ -4,58 +4,97 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { IconActivity, IconBolt } from "@/components/ui/icons";
 import { api } from "@/lib/api";
-import type { PriceFeed } from "@/lib/types";
+import type { MarketBriefing, PriceFeed } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
-function TickerContent({ items, noPriceLabel }: { items: PriceFeed[]; noPriceLabel: string }) {
+type TickerItem = {
+  label: string;
+  price: number | null;
+  currency: string;
+  date?: string;
+};
+
+function TickerContent({
+  items,
+  emptyLabel,
+}: {
+  items: TickerItem[];
+  emptyLabel: string;
+}) {
   if (items.length === 0) {
     return (
       <span className="inline-flex items-center gap-2 px-4 text-ink-muted">
         <IconBolt className="size-3.5 text-accent" />
-        No live prices cached — run the scraper in Live Market to fetch feeds.
+        {emptyLabel}
       </span>
     );
   }
   return (
     <>
-      {items.map((item, i) => {
-        const priced = item.price != null;
-        return (
-          <span key={i} className="inline-flex items-center gap-2 px-6">
-            <span className="text-ink-subtle">t.me/s/{item.channel}</span>
-            {priced ? (
-              <span className="font-mono font-semibold text-ink">
-                {formatCurrency(item.price, item.currency)}
-                {item.currency !== "USD" && (
-                  <span className="ms-1 text-[11px] text-ink-subtle">
-                    /{item.currency}
-                  </span>
-                )}
-              </span>
-            ) : (
-              <span className="text-[11px] text-ink-subtle">{noPriceLabel}</span>
-            )}
+      {items.map((item, i) => (
+        <span key={i} className="inline-flex items-center gap-2 px-6">
+          <span className="text-ink-subtle">{item.label}</span>
+          {item.price != null ? (
+            <span className="font-mono font-semibold text-ink">
+              {formatCurrency(item.price, item.currency)}
+            </span>
+          ) : (
+            <span className="text-[11px] text-ink-subtle">—</span>
+          )}
+          {item.date ? (
             <span className="text-[11px] text-ink-subtle">· {item.date}</span>
-            <span className="text-line">|</span>
-          </span>
-        );
-      })}
+          ) : null}
+          <span className="text-line">|</span>
+        </span>
+      ))}
     </>
   );
 }
 
+function toTickerItems(briefing: MarketBriefing | null, prices: PriceFeed[]): TickerItem[] {
+  const fromBrief = (briefing?.prices || [])
+    .filter((p) => p.price != null)
+    .slice(0, 12)
+    .map((p) => ({
+      label: p.label || p.product || "Market",
+      price: p.price,
+      currency: p.currency || "Tomans",
+      date: (p.as_of || "").slice(0, 10),
+    }));
+  if (fromBrief.length) return fromBrief;
+  return prices
+    .filter((p) => p.price != null)
+    .slice(0, 12)
+    .map((p) => ({
+      label: p.channel,
+      price: p.price,
+      currency: p.currency,
+      date: p.date,
+    }));
+}
+
 export function PriceTicker() {
   const t = useTranslations();
-  const [items, setItems] = useState<PriceFeed[] | null>(null);
+  const [items, setItems] = useState<TickerItem[] | null>(null);
 
   useEffect(() => {
     let active = true;
-    api.market
-      .prices()
-      .then((data) => active && setItems(data))
-      .catch(() => active && setItems([]));
+    const load = async () => {
+      try {
+        const [briefing, prices] = await Promise.all([
+          api.market.briefing().catch(() => null),
+          api.market.prices().catch(() => [] as PriceFeed[]),
+        ]);
+        if (active) setItems(toTickerItems(briefing, prices));
+      } catch {
+        if (active) setItems([]);
+      }
+    };
+    load();
+    const id = window.setInterval(load, 5 * 60 * 1000);
     return () => {
       active = false;
+      window.clearInterval(id);
     };
   }, []);
 
@@ -69,8 +108,8 @@ export function PriceTicker() {
         <div className="ticker-track">
           {items ? (
             <>
-              <TickerContent items={items} noPriceLabel={t("common.no_price_parsed")} />
-              <TickerContent items={items} noPriceLabel={t("common.no_price_parsed")} />
+              <TickerContent items={items} emptyLabel={t("ticker.no_prices")} />
+              <TickerContent items={items} emptyLabel={t("ticker.no_prices")} />
             </>
           ) : (
             <span className="px-4 text-[13px] text-ink-muted">

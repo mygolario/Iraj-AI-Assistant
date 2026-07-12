@@ -16,7 +16,7 @@ import {
   IconArrowOut,
 } from "@/components/ui/icons";
 import { api } from "@/lib/api";
-import type { BiResult, PriceFeed, RagResult } from "@/lib/types";
+import type { BiResult, MarketBriefing, RagResult } from "@/lib/types";
 import { cn, formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
 import { DealCalculator } from "../deal-calculator";
 
@@ -122,67 +122,89 @@ function BiSummaryTile() {
 
 function LivePricesTile() {
   const t = useTranslations();
-  const [items, setItems] = React.useState<PriceFeed[] | null>(null);
-  const [scraping, setScraping] = React.useState(false);
+  const [briefing, setBriefing] = React.useState<MarketBriefing | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [refreshing, setRefreshing] = React.useState(false);
 
   const load = React.useCallback(() => {
-    api.market.prices().then(setItems).catch(() => setItems([]));
+    setLoading(true);
+    api.market
+      .briefing()
+      .then(setBriefing)
+      .catch(() => setBriefing(null))
+      .finally(() => setLoading(false));
   }, []);
 
   React.useEffect(() => {
     load();
   }, [load]);
 
-  const runScraper = async () => {
-    setScraping(true);
+  const refresh = async () => {
+    setRefreshing(true);
     try {
-      const urls = JSON.parse(localStorage.getItem("iraj-scraper-urls") || "[]") as string[];
-      if (urls.length) await api.market.scrape(urls);
-      load();
+      const data = await api.market.buildBriefing({ mode: "fast", use_web: true });
+      setBriefing(data);
     } catch {
       /* ignore */
     } finally {
-      setScraping(false);
+      setRefreshing(false);
     }
   };
 
-  const priced = (items ?? []).filter((i) => i.price != null).slice(0, 3);
+  const prices = (briefing?.prices || []).filter((p) => p.price != null).slice(0, 3);
+  const summary = briefing?.summary?.trim();
 
   return (
     <Tile>
       <TileHeader icon={IconMarket} title={t("dashboard.market_title")} href="/market" />
-      {!items ? (
+      {loading ? (
         <div className="space-y-2">
           {[0, 1, 2].map((i) => (
             <div key={i} className="skeleton h-12 rounded-sm" />
           ))}
         </div>
-      ) : priced.length ? (
-        <div className="space-y-2">
-          {priced.map((item, i) => (
+      ) : summary || prices.length ? (
+        <div className="space-y-3">
+          {summary ? (
+            <p className="line-clamp-3 text-[13px] leading-relaxed text-ink-muted">
+              {summary}
+            </p>
+          ) : null}
+          {prices.map((item, i) => (
             <div
               key={i}
               className="flex items-center justify-between rounded-sm border border-line bg-bg-subtle px-3 py-2.5"
             >
               <div className="min-w-0">
                 <div className="truncate text-[13px] font-medium text-ink">
-                  t.me/s/{item.channel}
+                  {item.label || item.product || "Market"}
                 </div>
-                <div className="text-[11px] text-ink-subtle">{item.date}</div>
+                <div className="text-[11px] text-ink-subtle">
+                  {(item.as_of || "").slice(0, 10) || item.source_title || ""}
+                </div>
               </div>
               <div className="font-mono text-sm font-semibold text-ink tabular-nums">
                 {formatCurrency(item.price, item.currency)}
               </div>
             </div>
           ))}
-          <button
-            onClick={runScraper}
-            disabled={scraping}
-            className="mt-1 flex w-full items-center justify-center gap-2 rounded-sm border border-line bg-card py-2 text-[13px] font-medium text-ink-muted transition-colors hover:bg-bg-subtle hover:text-ink disabled:opacity-50"
-          >
-            <IconBolt className={cn("size-3.5", scraping && "animate-pulse")} />
-            {scraping ? t("dashboard.scraping") : t("dashboard.refresh_feeds")}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={refresh}
+              disabled={refreshing}
+              className="mt-1 flex flex-1 items-center justify-center gap-2 rounded-sm border border-line bg-card py-2 text-[13px] font-medium text-ink-muted transition-colors hover:bg-bg-subtle hover:text-ink disabled:opacity-50"
+            >
+              <IconBolt className={cn("size-3.5", refreshing && "animate-pulse")} />
+              {refreshing ? t("dashboard.scraping") : t("dashboard.refresh_feeds")}
+            </button>
+            <Link
+              href="/market"
+              className="mt-1 flex flex-1 items-center justify-center gap-1.5 rounded-sm bg-accent px-3 py-2 text-[13px] font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
+            >
+              {t("dashboard.ask_market")}
+              <IconArrowOut className="size-3.5" />
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="flex flex-col items-center gap-3 py-8 text-center">

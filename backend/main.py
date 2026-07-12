@@ -4,12 +4,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.routes import bi, chat, market, rag, sales
 from config import CORS_ORIGINS, api_key_configured
 from core.live_scraper import read_cached_prices
+from core.market_agents import read_briefing, read_snapshots
+from core.market_sources import list_sources_public
 from core.rag_engine import get_index_state
 
 app = FastAPI(
     title="Iraj Sales AI — Backend",
-    description="Multi-agent backend for steel rebar sales: BI, RAG, market scraping, contracts, AI copilot.",
-    version="2.0.0",
+    description="Multi-agent backend for steel rebar sales: BI, RAG, market intelligence, contracts, AI copilot.",
+    version="2.1.0",
 )
 
 app.add_middleware(
@@ -25,11 +27,16 @@ app.add_middleware(
 async def health():
     rag = get_index_state()
     cache = read_cached_prices()
+    snaps = read_snapshots()
+    briefing = read_briefing()
+    sources = list_sources_public()
     return {
         "rag_records": rag["records"],
         "rag_files": rag["files"],
         "rag_files_list": rag["files_list"],
-        "cache_count": len(cache),
+        "cache_count": len(snaps) or len(cache),
+        "market_sources": len(sources),
+        "market_briefing_at": briefing.get("updated_at"),
         "api_key_configured": api_key_configured(),
     }
 

@@ -16,6 +16,42 @@ class ScrapeRequest(BaseModel):
 
 class ArbitrageRequest(BaseModel):
     internal_avg: float
+    fx_rate: float = 1.0
+    market_price: float | None = None
+    currency: str = "Tomans"
+
+
+class MarketSourceCreate(BaseModel):
+    type: str = Field(..., min_length=1)
+    title: str = ""
+    url: str | None = None
+    text: str | None = None
+    meta: dict | None = None
+
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class MarketAskRequest(BaseModel):
+    message: str = Field(..., min_length=1)
+    mode: str = "fast"  # fast | deep
+    source_ids: list[str] = Field(default_factory=list)
+    web: bool = True
+    language: str = "en"
+    messages: list[ChatMessage] = Field(default_factory=list)
+
+
+class MarketBriefingRequest(BaseModel):
+    language: str = "en"
+    mode: str = "fast"
+    use_web: bool = True
+    watchlist: list[dict] | None = None
+
+
+class MarketRefreshRequest(BaseModel):
+    source_ids: list[str] = Field(default_factory=list)
 
 
 class ContractRequest(BaseModel):
@@ -29,11 +65,6 @@ class ContractRequest(BaseModel):
 class RoadmapRequest(BaseModel):
     company_name: str
     target_market: str
-
-
-class ChatMessage(BaseModel):
-    role: str
-    content: str
 
 
 class ChatRequest(BaseModel):
