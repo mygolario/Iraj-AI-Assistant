@@ -20,7 +20,7 @@ import {
   IconDocument,
   IconClose,
 } from "@/components/ui/icons";
-import { api, DEFAULT_MARKET_WATCHLIST } from "@/lib/api";
+import { api, DEFAULT_MARKET_WATCHLIST, formatMarketApiError, isMarketAgentUnavailableError } from "@/lib/api";
 import type {
   ArbitrageResult,
   BiResult,
@@ -142,6 +142,7 @@ export function MarketPage() {
   const [fxRate, setFxRate] = React.useState(1);
   const [arbitrage, setArbitrage] = React.useState<ArbitrageResult | null>(null);
   const [arbLoading, setArbLoading] = React.useState(false);
+  const [backendMismatch, setBackendMismatch] = React.useState(false);
   const abortRef = React.useRef<AbortController | null>(null);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const fileRef = React.useRef<HTMLInputElement>(null);
@@ -152,20 +153,29 @@ export function MarketPage() {
     [t],
   );
 
+  const marketError = React.useCallback(
+    (error: unknown, fallbackKey: "briefing_failed" | "refresh_failed" | "ask_failed" | "source_add_failed" | "delete_failed" | "arbitrage_failed") =>
+      formatMarketApiError(error, t("agent_unavailable"), t(fallbackKey)),
+    [t],
+  );
+
   const loadSources = React.useCallback(async () => {
     try {
       const data = await api.market.sources();
       setSources(data.sources);
-    } catch {
+      setBackendMismatch(false);
+    } catch (e) {
       setSources([]);
+      if (isMarketAgentUnavailableError(e)) setBackendMismatch(true);
     }
   }, []);
 
   const loadBriefing = React.useCallback(async () => {
     try {
       setBriefing(await api.market.briefing());
-    } catch {
+    } catch (e) {
       setBriefing(null);
+      if (isMarketAgentUnavailableError(e)) setBackendMismatch(true);
     }
   }, []);
 
@@ -212,7 +222,8 @@ export function MarketPage() {
       setBriefing(data);
       if (!silent) toast.success(t("briefing_updated"));
     } catch (e) {
-      if (!silent) toast.error(e instanceof Error ? e.message : t("briefing_failed"));
+      if (isMarketAgentUnavailableError(e)) setBackendMismatch(true);
+      if (!silent) toast.error(marketError(e, "briefing_failed"));
     } finally {
       setBriefLoading(false);
     }
@@ -223,10 +234,12 @@ export function MarketPage() {
     try {
       const res = await api.market.refresh();
       setSources(res.sources);
+      setBackendMismatch(false);
       toast.success(t("sources_refreshed", { count: res.refreshed }));
       await refreshBriefing("fast", true);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("refresh_failed"));
+      if (isMarketAgentUnavailableError(e)) setBackendMismatch(true);
+      toast.error(marketError(e, "refresh_failed"));
     } finally {
       setRefreshing(false);
     }
@@ -282,7 +295,8 @@ export function MarketPage() {
       await loadBriefing();
     } catch (e) {
       if ((e as Error).name !== "AbortError") {
-        toast.error(e instanceof Error ? e.message : t("ask_failed"));
+        if (isMarketAgentUnavailableError(e)) setBackendMismatch(true);
+        toast.error(marketError(e, "ask_failed"));
         setMessages((prev) => prev.slice(0, -1));
       }
     } finally {
@@ -329,7 +343,8 @@ export function MarketPage() {
       setAddText("");
       setAddTitle("");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("source_add_failed"));
+      if (isMarketAgentUnavailableError(e)) setBackendMismatch(true);
+      toast.error(marketError(e, "source_add_failed"));
     } finally {
       setAdding(false);
     }
@@ -353,7 +368,8 @@ export function MarketPage() {
       setAddOpen(false);
       setAddTitle("");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("source_add_failed"));
+      if (isMarketAgentUnavailableError(e)) setBackendMismatch(true);
+      toast.error(marketError(e, "source_add_failed"));
     } finally {
       setAdding(false);
     }
@@ -364,7 +380,8 @@ export function MarketPage() {
       await api.market.deleteSource(id);
       setSources((prev) => prev.filter((s) => s.id !== id));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("delete_failed"));
+      if (isMarketAgentUnavailableError(e)) setBackendMismatch(true);
+      toast.error(marketError(e, "delete_failed"));
     }
   };
 
@@ -388,7 +405,8 @@ export function MarketPage() {
       const result = await api.market.arbitrage(avg, fxRate);
       setArbitrage(result);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("arbitrage_failed"));
+      if (isMarketAgentUnavailableError(e)) setBackendMismatch(true);
+      toast.error(marketError(e, "arbitrage_failed"));
     } finally {
       setArbLoading(false);
     }
@@ -435,6 +453,16 @@ export function MarketPage() {
           </Button>
         </div>
       </header>
+
+      {backendMismatch && (
+        <div
+          role="alert"
+          className="rounded-md border border-negative/40 bg-negative/10 px-4 py-3 text-sm text-ink"
+        >
+          <p className="font-medium text-negative">{t("backend_mismatch_title")}</p>
+          <p className="mt-1 text-ink-muted">{t("backend_mismatch_body")}</p>
+        </div>
+      )}
 
       {/* Three-pane desk */}
       <div className="grid flex-1 gap-4 lg:grid-cols-[240px_minmax(0,1fr)_280px]">

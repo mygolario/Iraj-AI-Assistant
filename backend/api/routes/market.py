@@ -15,7 +15,7 @@ from api.schemas import (
     MarketSourceCreate,
     ScrapeRequest,
 )
-from core.live_scraper import read_cached_prices, scrape_channels
+from core.live_scraper import read_cached_prices, scrape_channels, write_price_cache
 from core.market_agents import (
     ask_market_stream,
     build_briefing,
@@ -74,12 +74,14 @@ async def run_scrape(req: ScrapeRequest):
     if len(req.urls) > 50:
         raise HTTPException(400, "Maximum 50 source URLs allowed.")
     items = scrape_channels(req.urls)
-    # Also register as telegram sources for the library
+    # Also register as telegram sources for the library (must not overwrite combined cache)
     for url in req.urls[:20]:
         try:
             create_source(source_type="telegram", url=url.strip(), title="")
         except Exception:
             pass
+    # Ensure ticker/dashboard still see the full multi-channel scrape result
+    write_price_cache(items)
     return {"items": items, "count": len(items)}
 
 

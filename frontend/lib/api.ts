@@ -16,6 +16,24 @@ import type {
 const _raw = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const API_BASE = _raw.startsWith("http") ? _raw : `https://${_raw}`;
 
+/** FastAPI default 404 detail, or a generic HTTP 404 from the API client. */
+export function isMarketAgentUnavailableError(error: unknown): boolean {
+  const message = (error instanceof Error ? error.message : String(error ?? ""))
+    .trim()
+    .toLowerCase();
+  return message === "not found" || message === "request failed (404)";
+}
+
+export function formatMarketApiError(
+  error: unknown,
+  unavailableMessage: string,
+  fallback: string,
+): string {
+  if (isMarketAgentUnavailableError(error)) return unavailableMessage;
+  if (error instanceof Error && error.message.trim()) return error.message;
+  return fallback;
+}
+
 async function request<T>(
   path: string,
   init?: RequestInit,

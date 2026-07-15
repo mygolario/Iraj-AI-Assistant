@@ -37,7 +37,7 @@ def parse_price_value(text: str) -> tuple[float | None, str | None]:
     return None, None
 
 
-def scrape_channels(urls: list[str]) -> list[dict]:
+def scrape_channels(urls: list[str], *, write_cache: bool = True) -> list[dict]:
     results: list[dict] = []
 
     for url in urls:
@@ -99,13 +99,18 @@ def scrape_channels(urls: list[str]) -> list[dict]:
                 }
             )
 
-    try:
-        with open(PRICE_CACHE_FILE, "w", encoding="utf-8") as f:
-            json.dump(results, f, indent=4)
-    except Exception:
-        pass
+    if write_cache:
+        write_price_cache(results)
 
     return results
+
+
+def write_price_cache(items: list[dict]) -> None:
+    try:
+        with open(PRICE_CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(items, f, indent=4)
+    except Exception:
+        pass
 
 
 def read_cached_prices() -> list[dict]:

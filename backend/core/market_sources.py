@@ -159,7 +159,8 @@ def _fetch_url_text(url: str) -> tuple[str, str | None]:
 
 
 def _telegram_to_text(url: str) -> tuple[str, list[dict], str | None]:
-    items = scrape_channels([url])
+    # Do not rewrite the shared price cache — batch /scrape owns that file
+    items = scrape_channels([url], write_cache=False)
     if not items:
         return "", [], "Could not fetch Telegram channel preview"
     lines = []
@@ -336,6 +337,8 @@ def refresh_source(source_id: str) -> dict[str, Any]:
             content = _extract_excel_text(path)
         elif src["type"] == "screenshot":
             content = _vision_extract(path, hint=src.get("title") or "")
+            if not content:
+                error = error or "Could not extract text from screenshot (vision unavailable)"
         else:
             content = Path(path).read_text(encoding="utf-8", errors="ignore")
     else:
@@ -343,16 +346,26 @@ def refresh_source(source_id: str) -> dict[str, Any]:
         return src
 
     chunks = _chunk_text(content)
+    # Preserve prior grounding when refresh fails or yields no replacement content
+    keep_prior = bool(error) or not chunks
     lib = _load_library()
     for i, s in enumerate(lib["sources"]):
         if s["id"] == source_id:
-            s["chunks"] = chunks
-            s["chunk_count"] = len(chunks)
-            s["excerpt"] = content[:400] if content else ""
-            s["error"] = error
-            s["status"] = "ready" if chunks and not error else ("error" if error else "empty")
+            if keep_prior:
+                s["error"] = error or ("No content extracted on refresh" if not content else error)
+                s["status"] = "error" if s["error"] else s.get("status", "ready")
+                if telegram_items:
+                    s["telegram_items"] = telegram_items[:20]
+            else:
+                s["chunks"] = chunks
+                s["chunk_count"] = len(chunks)
+                s["excerpt"] = content[:400] if content else ""
+                s["error"] = error
+                s["status"] = "ready" if chunks and not error else ("error" if error else "empty")
+                s["telegram_items"] = (
+                    telegram_items[:20] if telegram_items else s.get("telegram_items", [])
+                )
             s["updated_at"] = _now()
-            s["telegram_items"] = telegram_items[:20] if telegram_items else s.get("telegram_items", [])
             lib["sources"][i] = s
             _save_library(lib)
             return s
@@ -369,7 +382,8 @@ def refresh_all_refreshable() -> dict[str, Any]:
                 results.append(refresh_source(s["id"]))
             except Exception as e:
                 results.append({**s, "status": "error", "error": str(e)})
-    return {"refreshed": len(results), "sources": [_public_source(r) for r in results]}
+    # Always return the full library so paste/PDF/internal sources stay in the UI
+    return {"refreshed": len(results), "sources": list_sources_public()}
 
 
 def retrieve_chunks(
