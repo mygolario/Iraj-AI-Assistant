@@ -7,9 +7,13 @@ import { PriceTicker } from "./price-ticker";
 import { CopilotFab } from "./copilot-fab";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const [collapsed, setCollapsed] = React.useState(() => {
-    try { return localStorage.getItem("iraj-sidebar-collapsed") === "1"; } catch { return false; }
-  });
+  const [collapsed, setCollapsed] = React.useState(false);
+
+  React.useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem("iraj-sidebar-collapsed") === "1");
+    } catch { /* ignore */ }
+  }, []);
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
   const toggleCollapse = React.useCallback(() => {

@@ -69,13 +69,14 @@ function TileHeader({
 
 function BiSummaryTile() {
   const t = useTranslations();
-  const [bi] = React.useState<BiResult | null>(() => {
+  const [bi, setBi] = React.useState<BiResult | null>(null);
+
+  React.useEffect(() => {
     try {
       const raw = localStorage.getItem("iraj-last-bi");
-      if (raw) return JSON.parse(raw);
+      if (raw) setBi(JSON.parse(raw));
     } catch { /* ignore */ }
-    return null;
-  });
+  }, []);
 
   const k = bi?.kpis;
   const stats = k
