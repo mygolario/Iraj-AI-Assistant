@@ -3,11 +3,20 @@ from pydantic import BaseModel, Field
 
 class QueryRequest(BaseModel):
     query: str = Field(..., min_length=1)
+    document_ids: list[str] = Field(default_factory=list)
+    standards: list[str] = Field(default_factory=list)
+    limit: int = Field(default=20, ge=1, le=100)
 
 
 class DatasheetRequest(BaseModel):
     grade: str = Field(..., min_length=1)
     company: str = ""
+    document_ids: list[str] = Field(default_factory=list)
+
+
+class StandardsCompareRequest(BaseModel):
+    grades: list[str] = Field(..., min_length=2, max_length=4)
+    document_ids: list[str] = Field(default_factory=list)
 
 
 class ScrapeRequest(BaseModel):

@@ -1,18 +1,93 @@
+import hashlib
+import json
 import os
 import re
+import shutil
+import threading
+from datetime import datetime, timezone
+from pathlib import Path
+from uuid import uuid4
 
-from config import OPENROUTER_API_KEY, OPENROUTER_BASE_URL, EMBEDDING_MODEL
+import pypdf
+from openai import OpenAI
 
+from config import (
+    EMBEDDING_MODEL,
+    OPENROUTER_API_KEY,
+    OPENROUTER_BASE_URL,
+    STANDARDS_FILE_DIR,
+    STANDARDS_INDEX_FILE,
+    STANDARDS_LIBRARY_FILE,
+)
+
+_WRITE_LOCK = threading.Lock()
 _DOCUMENT_INDEX: list[dict] = []
-_INDEXED_FILES: set[str] = set()
+_DOCUMENTS: list[dict] = []
+
+_SYNONYMS = {
+    "yield strength": ["yield point", "re", "r_e", "minimum yield"],
+    "yield point": ["yield strength", "re", "r_e", "minimum yield"],
+    "tensile strength": ["tensile", "rm", "r_m", "ultimate strength"],
+    "elongation": ["ductility", "a5", "a10"],
+    "grade 60": ["gr60", "gr 60", "grade 60"],
+    "b500b": ["b500b", "500 mpa", "din 488"],
+}
+
+_STANDARD_PATTERNS = (
+    ("ASTM", r"\bASTM\s+[A-Z]\s*\d+(?:[/-]\w+)?"),
+    ("DIN", r"\bDIN\s+\d+(?:[-/]\d+)*"),
+    ("JIS", r"\bJIS\s+[A-Z]\s*\d+"),
+    ("GB/T", r"\b(?:GB/T|GBT)\s*\d+(?:\.\d+)?"),
+    ("BS", r"\bBS\s+\d+(?:[-:]\d+)*"),
+    ("SAE", r"\bSAE\s+[A-Z]?\s*\d+"),
+)
+
+
+def _read_json(path: Path, fallback: list[dict]) -> list[dict]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, list) else fallback
+    except (OSError, json.JSONDecodeError):
+        return fallback
+
+
+def _write_json(path: Path, value: list[dict]) -> None:
+    temporary = path.with_suffix(f"{path.suffix}.tmp")
+    temporary.write_text(
+        json.dumps(value, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
+    temporary.replace(path)
+
+
+def _load_library() -> None:
+    global _DOCUMENTS, _DOCUMENT_INDEX
+    _DOCUMENTS = _read_json(STANDARDS_LIBRARY_FILE, [])
+    _DOCUMENT_INDEX = _read_json(STANDARDS_INDEX_FILE, [])
+
+
+def _persist_library() -> None:
+    with _WRITE_LOCK:
+        _write_json(STANDARDS_LIBRARY_FILE, _DOCUMENTS)
+        _write_json(STANDARDS_INDEX_FILE, _DOCUMENT_INDEX)
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _file_hash(file_path: str) -> str:
+    digest = hashlib.sha256()
+    with open(file_path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def get_embedding(text: str) -> list[float] | None:
     if not OPENROUTER_API_KEY:
         return None
     try:
-        from openai import OpenAI
-
         client = OpenAI(base_url=OPENROUTER_BASE_URL, api_key=OPENROUTER_API_KEY)
         response = client.embeddings.create(model=EMBEDDING_MODEL, input=text)
         return response.data[0].embedding
@@ -31,192 +106,256 @@ def cosine_similarity(v1: list[float], v2: list[float]) -> float:
     return dot_product / (norm_a * norm_b)
 
 
-def index_document(file_path: str) -> bool:
-    if not file_path or not os.path.exists(file_path):
-        return False
+def _detect_metadata(filename: str, sample: str) -> dict:
+    combined = f"{filename} {sample}".upper()
+    standard = "UNKNOWN"
+    standard_code = ""
+    for family, pattern in _STANDARD_PATTERNS:
+        match = re.search(pattern, combined, re.IGNORECASE)
+        if match:
+            standard = family
+            standard_code = re.sub(r"\s+", " ", match.group(0)).strip()
+            break
+        if family in combined:
+            standard = family
 
-    abs_path = os.path.abspath(file_path)
-    if abs_path in _INDEXED_FILES:
-        return True
+    year_match = re.search(r"\b(?:19|20)\d{2}\b", combined)
+    has_persian = bool(re.search(r"[\u0600-\u06ff]", sample))
+    return {
+        "standard": standard,
+        "standard_code": standard_code or standard,
+        "edition": year_match.group(0) if year_match else "",
+        "language": "fa" if has_persian else "en",
+    }
 
-    if os.path.getsize(file_path) == 0:
-        return False
 
-    filename = os.path.basename(file_path)
-
-    if file_path.endswith(".pdf"):
-        pages_text: list[tuple[int, str]] = []
+def _extract_pages(file_path: str) -> list[tuple[int, str]]:
+    if file_path.lower().endswith(".pdf"):
         try:
-            import pypdf
-
             reader = pypdf.PdfReader(file_path)
-            for i, page in enumerate(reader.pages):
-                pages_text.append((i + 1, page.extract_text() or ""))
+            return [
+                (page_number, page.extract_text() or "")
+                for page_number, page in enumerate(reader.pages, start=1)
+            ]
         except Exception:
-            pass
+            return []
 
-        if not any(txt.strip() for _, txt in pages_text):
-            try:
-                import PyPDF2  # type: ignore
+    try:
+        content = Path(file_path).read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        content = Path(file_path).read_text(encoding="latin-1")
+    except OSError:
+        return []
+    return [(1, content)]
 
-                pages_text = []
-                reader = PyPDF2.PdfReader(file_path)
-                for i, page in enumerate(reader.pages):
-                    pages_text.append((i + 1, page.extract_text() or ""))
-            except Exception:
-                pass
 
-        if not any(txt.strip() for _, txt in pages_text):
-            pages_text = []
-            try:
-                with open(file_path, "rb") as f:
-                    pdf_data = f.read()
-                matches = re.findall(rb"\((.*?)\)\s*Tj", pdf_data)
-                if matches:
-                    txt = " ".join(m.decode("utf-8", errors="ignore") for m in matches)
-                    pages_text.append((1, txt))
-                else:
-                    ascii_txt = "".join(
-                        chr(b) for b in pdf_data if 32 <= b <= 126 or b in [10, 13]
-                    )
-                    pages_text.append((1, ascii_txt))
-            except Exception:
-                return False
+def _chunk_page(text: str, maximum_length: int = 1200) -> list[str]:
+    paragraphs = [part.strip() for part in re.split(r"\n\s*\n|\n", text) if part.strip()]
+    chunks: list[str] = []
+    current = ""
+    for paragraph in paragraphs:
+        candidate = f"{current}\n{paragraph}".strip()
+        if current and len(candidate) > maximum_length:
+            chunks.append(current)
+            current = paragraph
+        else:
+            current = candidate
+    if current:
+        chunks.append(current)
+    return chunks
 
-        if not pages_text:
-            return False
 
-        for page_num, txt in pages_text:
-            if not txt.strip():
-                continue
-            for p in [para.strip() for para in txt.split("\n") if para.strip()]:
-                _DOCUMENT_INDEX.append(
-                    {
-                        "text": p,
-                        "source": filename,
-                        "page": page_num,
-                        "standard": _detect_standard(filename, p),
-                        "embedding": get_embedding(p),
-                    }
-                )
-    else:
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                content = f.read()
-        except UnicodeDecodeError:
-            try:
-                with open(file_path, "r", encoding="latin-1") as f:
-                    content = f.read()
-            except Exception:
-                return False
-        except Exception:
-            return False
+def ingest_document(file_path: str, original_name: str | None = None) -> dict:
+    if not file_path or not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
+        raise ValueError("The uploaded document is empty or unavailable.")
 
-        if not content.strip():
-            return False
+    filename = original_name or os.path.basename(file_path)
+    checksum = _file_hash(file_path)
+    existing = next((doc for doc in _DOCUMENTS if doc["checksum"] == checksum), None)
+    if existing:
+        return {**existing, "duplicate": True}
 
-        for p in [para.strip() for para in content.split("\n") if para.strip()]:
-            _DOCUMENT_INDEX.append(
+    document_id = uuid4().hex
+    extension = Path(filename).suffix.lower()
+    stored_path = STANDARDS_FILE_DIR / f"{document_id}{extension}"
+    shutil.copyfile(file_path, stored_path)
+
+    pages = _extract_pages(str(stored_path))
+    sample = "\n".join(text for _, text in pages)[:12000]
+    metadata = _detect_metadata(filename, sample)
+    now = _now()
+    document = {
+        "id": document_id,
+        "filename": filename,
+        "title": Path(filename).stem.replace("_", " ").replace("-", " "),
+        "standard": metadata["standard"],
+        "standard_code": metadata["standard_code"],
+        "edition": metadata["edition"],
+        "language": metadata["language"],
+        "status": "processing",
+        "processing_status": "extracting",
+        "size_bytes": os.path.getsize(file_path),
+        "page_count": len(pages),
+        "passage_count": 0,
+        "checksum": checksum,
+        "stored_path": str(stored_path),
+        "uploaded_at": now,
+        "updated_at": now,
+        "duplicate": False,
+    }
+    _DOCUMENTS.append(document)
+
+    passages: list[dict] = []
+    for page_number, page_text in pages:
+        for text in _chunk_page(page_text):
+            passages.append(
                 {
-                    "text": p,
+                    "id": uuid4().hex,
+                    "document_id": document_id,
+                    "text": text,
                     "source": filename,
-                    "page": 1,
-                    "standard": _detect_standard(filename, p),
-                    "embedding": get_embedding(p),
+                    "page": page_number,
+                    "standard": metadata["standard"],
+                    "standard_code": metadata["standard_code"],
+                    "embedding": get_embedding(text),
                 }
             )
 
-    _INDEXED_FILES.add(abs_path)
+    _DOCUMENT_INDEX.extend(passages)
+    document["passage_count"] = len(passages)
+    document["processing_status"] = "ready" if passages else "failed"
+    document["status"] = "active" if passages else "needs_review"
+    document["updated_at"] = _now()
+    _persist_library()
+    return dict(document)
+
+
+def index_document(file_path: str) -> bool:
+    try:
+        return ingest_document(file_path)["processing_status"] == "ready"
+    except (OSError, ValueError):
+        return False
+
+
+def list_documents() -> list[dict]:
+    return [
+        {key: value for key, value in document.items() if key != "stored_path"}
+        for document in sorted(
+            _DOCUMENTS,
+            key=lambda item: item.get("uploaded_at", ""),
+            reverse=True,
+        )
+    ]
+
+
+def get_document(document_id: str) -> dict | None:
+    document = next((doc for doc in _DOCUMENTS if doc["id"] == document_id), None)
+    return dict(document) if document else None
+
+
+def delete_document(document_id: str) -> bool:
+    document = next((doc for doc in _DOCUMENTS if doc["id"] == document_id), None)
+    if document is None:
+        return False
+    try:
+        Path(document["stored_path"]).unlink(missing_ok=True)
+    except OSError:
+        pass
+    _DOCUMENTS.remove(document)
+    _DOCUMENT_INDEX[:] = [
+        passage for passage in _DOCUMENT_INDEX if passage["document_id"] != document_id
+    ]
+    _persist_library()
     return True
 
 
-def _detect_standard(filename: str, content: str) -> str:
-    combined = (filename + " " + content).upper()
-    for std in ["DIN", "ASTM", "JIS", "GB/T", "GBT", "BS", "SAE"]:
-        if std in combined:
-            return std
-    return "UNKNOWN"
+def _expanded_terms(query: str) -> list[str]:
+    terms = query.lower().split()
+    for phrase, synonyms in _SYNONYMS.items():
+        if phrase in query.lower():
+            terms.extend(synonyms)
+    return terms
 
 
-def query_standards(query_str: str) -> list[dict]:
+def query_standards(
+    query_str: str,
+    document_ids: list[str] | None = None,
+    standards: list[str] | None = None,
+    limit: int = 20,
+) -> list[dict]:
     if not query_str or not query_str.strip():
         return []
 
-    query_emb = get_embedding(query_str)
-    has_embeddings = any(item.get("embedding") is not None for item in _DOCUMENT_INDEX)
+    candidates = _DOCUMENT_INDEX
+    if document_ids:
+        allowed_documents = set(document_ids)
+        candidates = [
+            item for item in candidates if item["document_id"] in allowed_documents
+        ]
+    if standards:
+        allowed_standards = {standard.upper() for standard in standards}
+        candidates = [
+            item for item in candidates if item["standard"].upper() in allowed_standards
+        ]
 
-    if query_emb is not None and has_embeddings:
-        results = []
-        for item in _DOCUMENT_INDEX:
-            doc_emb = item.get("embedding")
-            if doc_emb is not None:
-                sim = cosine_similarity(query_emb, doc_emb)
-                if sim >= 0.35:
-                    results.append(
-                        {
-                            "passage": item["text"],
-                            "text": item["text"],
-                            "source": item["source"],
-                            "page": item["page"],
-                            "score": round(sim, 2),
-                            "metadata": {
-                                "source": item["source"],
-                                "standard": item["standard"],
-                                "page": item["page"],
-                            },
-                        }
-                    )
-        results.sort(key=lambda x: x["score"], reverse=True)
-        return results
+    query_embedding = get_embedding(query_str)
+    expanded_terms = _expanded_terms(query_str)
+    normalized_query = query_str.lower().strip()
+    results: list[dict] = []
 
-    q = query_str.lower().strip()
-    synonyms = {
-        "yield strength": ["yield point", "re", "r_e", "minimum yield"],
-        "yield point": ["yield strength", "re", "r_e", "minimum yield"],
-        "tensile strength": ["tensile", "rm", "r_m", "ultimate strength"],
-        "grade 60": ["gr60", "gr 60", "grade 60"],
-        "b500b": ["b500b", "500 mpa", "din 488"],
-    }
-
-    query_words = q.split()
-    expanded_words = list(query_words)
-    for word, syn_list in synonyms.items():
-        if word in q:
-            expanded_words.extend(syn_list)
-
-    results = []
-    for item in _DOCUMENT_INDEX:
+    for item in candidates:
         text_lower = item["text"].lower()
-        score = 0.0
-        for word in expanded_words:
-            if word in text_lower:
-                score += 1.0
-        if q in text_lower:
-            score += 5.0
-        if score > 0:
-            results.append(
-                {
-                    "passage": item["text"],
-                    "text": item["text"],
-                    "source": item["source"],
-                    "page": item["page"],
-                    "score": round(score / (len(query_words) + 1), 2),
-                    "metadata": {
-                        "source": item["source"],
-                        "standard": item["standard"],
-                        "page": item["page"],
-                    },
-                }
-            )
+        keyword_hits = sum(1 for term in expanded_terms if term in text_lower)
+        keyword_score = keyword_hits / max(len(expanded_terms), 1)
+        if normalized_query in text_lower:
+            keyword_score += 1.0
 
-    results.sort(key=lambda x: x["score"], reverse=True)
-    return results
+        semantic_score = 0.0
+        document_embedding = item.get("embedding")
+        if query_embedding is not None and document_embedding is not None:
+            semantic_score = cosine_similarity(query_embedding, document_embedding)
+
+        score = max(semantic_score, min(keyword_score, 1.0))
+        if score < 0.2:
+            continue
+        strength = "strong" if score >= 0.7 else "related" if score >= 0.4 else "weak"
+        results.append(
+            {
+                "id": item["id"],
+                "document_id": item["document_id"],
+                "passage": item["text"],
+                "text": item["text"],
+                "source": item["source"],
+                "page": item["page"],
+                "score": round(score, 3),
+                "strength": strength,
+                "metadata": {
+                    "source": item["source"],
+                    "standard": item["standard"],
+                    "standard_code": item.get("standard_code", item["standard"]),
+                    "page": item["page"],
+                    "document_id": item["document_id"],
+                },
+            }
+        )
+
+    results.sort(key=lambda result: result["score"], reverse=True)
+    return results[: max(1, min(limit, 100))]
 
 
 def get_index_state() -> dict:
-    files = sorted({item["source"] for item in _DOCUMENT_INDEX})
+    documents = list_documents()
     return {
         "records": len(_DOCUMENT_INDEX),
-        "files": len(files),
-        "files_list": files,
+        "files": len(documents),
+        "files_list": [document["filename"] for document in documents],
+        "ready_files": sum(
+            document["processing_status"] == "ready" for document in documents
+        ),
+        "needs_review": sum(
+            document["status"] == "needs_review" for document in documents
+        ),
     }
+
+
+_load_library()

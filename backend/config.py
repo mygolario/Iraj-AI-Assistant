@@ -30,6 +30,13 @@ MARKET_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_DIR = BACKEND_DIR / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
+STANDARDS_CACHE_DIR = CACHE_DIR / "standards"
+STANDARDS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+STANDARDS_LIBRARY_FILE = STANDARDS_CACHE_DIR / "library.json"
+STANDARDS_INDEX_FILE = STANDARDS_CACHE_DIR / "index.json"
+STANDARDS_FILE_DIR = STANDARDS_CACHE_DIR / "files"
+STANDARDS_FILE_DIR.mkdir(parents=True, exist_ok=True)
+
 CORS_ORIGINS = [
     o.strip()
     for o in os.environ.get(
