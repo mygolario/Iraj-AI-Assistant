@@ -30,6 +30,13 @@ export function formatNumber(value: number | null | undefined, suffix = ""): str
   return `${value.toLocaleString(locale, { maximumFractionDigits: 2 })}${suffix}`;
 }
 
+/** Compact axis-tick formatting (e.g. 125000 -> "125K") — used for chart Y-axes
+ * where full precision would be clipped or crowd the plot. */
+export function formatCompactNumber(value: number): string {
+  const locale = localeFromContext();
+  return new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 }).format(value);
+}
+
 export function formatPercent(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
   return `${value.toFixed(2)}%`;

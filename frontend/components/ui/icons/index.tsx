@@ -585,3 +585,83 @@ export function IconMoon(props: IconProps) {
     </Svg>
   );
 }
+
+/* --- BI rework: filters, customers, regions, goals, export ------------ */
+
+export function IconUsers(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3.5 19c1-3 3-4.5 5.5-4.5s4.5 1.5 5.5 4.5" />
+      <circle cx="17" cy="8.5" r="2.3" opacity={0.6} />
+      <path d="M15.5 14.5c2 .1 3.6 1.6 4.5 4" opacity={0.6} />
+    </Svg>
+  );
+}
+
+export function IconMapPin(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M12 21s-6.5-6.1-6.5-11A6.5 6.5 0 0 1 18.5 10c0 4.9-6.5 11-6.5 11z" />
+      <circle cx="12" cy="10" r="2.2" />
+    </Svg>
+  );
+}
+
+export function IconTarget(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <circle cx="12" cy="12" r="8.5" />
+      <circle cx="12" cy="12" r="4.5" />
+      <circle cx="12" cy="12" r="0.8" fill="currentColor" stroke="none" />
+    </Svg>
+  );
+}
+
+export function IconFileExport(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M6 3h9l3 3v15H6z" />
+      <path d="M14 3v4h4" opacity={0.5} />
+      <path d="M9.5 15.5 12 13l2.5 2.5" />
+      <line x1="12" y1="13" x2="12" y2="18" />
+    </Svg>
+  );
+}
+
+export function IconPin(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M14.5 3.5 9 9l-1 5-.5 3 3-.5 5-1 5.5-5.5-3-3z" opacity={0.5} />
+      <path d="M9 15 4 20" />
+    </Svg>
+  );
+}
+
+export function IconPlus(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </Svg>
+  );
+}
+
+export function IconWarning(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M12 4 21 19H3z" />
+      <line x1="12" y1="10" x2="12" y2="14" />
+      <circle cx="12" cy="17" r="0.8" fill="currentColor" stroke="none" />
+    </Svg>
+  );
+}
+
+export function IconEdit(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M15.5 4.5 19.5 8.5 8 20H4v-4z" />
+      <line x1="13.5" y1="6.5" x2="17.5" y2="10.5" />
+    </Svg>
+  );
+}

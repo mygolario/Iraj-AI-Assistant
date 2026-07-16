@@ -15,7 +15,7 @@ export function CopilotFab() {
   return (
     <Link
       href="/chat"
-      className="fixed bottom-6 end-6 z-40 flex items-center gap-2 rounded-sm border border-line bg-card py-2.5 ps-3 pe-4 text-sm font-medium text-ink shadow-[var(--shadow-2)] transition-colors hover:bg-bg-subtle hover:text-accent"
+      className="fixed bottom-6 end-6 z-40 flex items-center gap-2 rounded-sm border border-line bg-card py-2.5 ps-3 pe-4 text-sm font-medium text-ink shadow-[var(--shadow-2)] transition-colors hover:bg-bg-subtle hover:text-accent print:hidden"
     >
       <span className="flex size-7 items-center justify-center rounded-sm bg-accent-soft text-accent">
         <IconCopilot className="size-4" />
