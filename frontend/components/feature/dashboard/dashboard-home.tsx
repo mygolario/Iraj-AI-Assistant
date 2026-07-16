@@ -246,7 +246,15 @@ function RagQuickSearchTile() {
 
   return (
     <Tile>
-      <TileHeader icon={IconStandards} title={t("dashboard.standards_title")} href="/standards" />
+      <TileHeader
+        icon={IconStandards}
+        title={t("dashboard.standards_title")}
+        href={
+          query.trim()
+            ? `/standards?q=${encodeURIComponent(query.trim())}`
+            : "/standards"
+        }
+      />
       <form onSubmit={search} className="relative">
         <IconSearch className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-ink-subtle" />
         <input
@@ -265,17 +273,17 @@ function RagQuickSearchTile() {
       )}
       {!loading && results && results.length > 0 && (
         <div className="mt-3 space-y-2">
-          {results.slice(0, 2).map((r, i) => (
+          {results.slice(0, 2).map((r) => (
             <div
-              key={i}
+              key={r.id}
               className="rounded-sm border-s-2 border-line-strong bg-bg-subtle p-3"
             >
               <div className="mb-1 flex items-center justify-between">
                 <span className="text-[12px] font-semibold text-accent">
-                  {r.metadata.standard}
+                  {r.metadata.standard_code}
                 </span>
                 <span className="text-[11px] text-ink-subtle">
-                  score {r.score}
+                  {r.strength}
                 </span>
               </div>
               <p className="line-clamp-2 text-[13px] text-ink-muted">{r.text}</p>

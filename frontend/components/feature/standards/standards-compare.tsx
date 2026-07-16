@@ -82,26 +82,30 @@ export function StandardsCompare() {
         <PanelBody className="p-5">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {grades.map((grade, index) => (
-              <label key={index} className="flex flex-col gap-1.5">
-                <span className="flex items-center justify-between text-xs font-medium text-ink-muted">
-                  {t("comparison_item", { number: index + 1 })}
+              <div key={index} className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between text-xs font-medium text-ink-muted">
+                  <label htmlFor={`comparison-grade-${index}`}>
+                    {t("comparison_item", { number: index + 1 })}
+                  </label>
                   {grades.length > 2 && (
                     <button
                       type="button"
+                      aria-label={t("remove_comparison", { number: index + 1 })}
                       onClick={() => removeGrade(index)}
                       className="text-ink-subtle hover:text-negative"
                     >
                       {t("remove")}
                     </button>
                   )}
-                </span>
+                </div>
                 <input
+                  id={`comparison-grade-${index}`}
                   value={grade}
                   onChange={(event) => setGrade(index, event.target.value)}
                   placeholder={t("grade_placeholder")}
                   className="h-10 rounded-sm border border-line bg-bg-sunken px-3 text-sm text-ink outline-none placeholder:text-ink-subtle focus:border-accent focus:bg-card"
                 />
-              </label>
+              </div>
             ))}
           </div>
           <div className="mt-4 flex flex-wrap gap-2">

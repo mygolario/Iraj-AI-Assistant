@@ -7,7 +7,6 @@ import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  IconCheck,
   IconCross,
   IconDatasheet,
   IconDownload,
@@ -33,6 +32,10 @@ const SPECIFICATION_FIELDS = [
   "size_range",
   "chemical_composition",
 ] as const;
+
+function escapeMarkdownCell(value: string): string {
+  return value.replace(/\|/g, "\\|").replace(/\r?\n/g, "<br>");
+}
 
 export function StandardsDatasheets() {
   const t = useTranslations("standardsWorkspace");
@@ -73,10 +76,14 @@ export function StandardsDatasheets() {
 
   const download = () => {
     if (!datasheet || !reviewComplete) return;
-    const rows = SPECIFICATION_FIELDS.map(
-      (field) => `| ${t(`field_${field}`)} | ${datasheet[field] ?? t("not_found")} |`,
-    ).join("\n");
-    const markdown = `# ${t("technical_datasheet")}\n\n**${t("grade")}**: ${datasheet.grade}\n**${t("company")}**: ${datasheet.company || "—"}\n**${t("generated")}**: ${datasheet.date}\n**${t("review_status")}**: ${t("verified")}\n\n| ${t("technical_property")} | ${t("value")} |\n| --- | --- |\n${rows}\n\n${t("datasheet_evidence_note")}\n`;
+    const rows = SPECIFICATION_FIELDS.map((field) => {
+      const evidence = datasheet.evidence[field];
+      const source = evidence
+        ? `${evidence.citation.metadata.standard_code}, ${evidence.citation.source}, ${t("page_short", { page: evidence.citation.page })}`
+        : t("not_found");
+      return `| ${t(`field_${field}`)} | ${escapeMarkdownCell(datasheet[field] ?? t("not_found"))} | ${escapeMarkdownCell(source)} |`;
+    }).join("\n");
+    const markdown = `# ${t("technical_datasheet")}\n\n**${t("grade")}**: ${datasheet.grade}\n**${t("company")}**: ${datasheet.company || "—"}\n**${t("generated")}**: ${datasheet.date}\n**${t("review_status")}**: ${t("verified")}\n\n| ${t("technical_property")} | ${t("value")} | ${t("source_evidence")} |\n| --- | --- | --- |\n${rows}\n\n${t("datasheet_evidence_note")}\n`;
     downloadText(`${datasheet.grade.replace(/\s+/g, "_")}_verified.md`, markdown);
   };
 

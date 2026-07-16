@@ -49,16 +49,25 @@ export function StandardsPage() {
   const [uploading, setUploading] = React.useState(false);
   const [loadError, setLoadError] = React.useState("");
   const [role, setRole] = React.useState<StandardsRole>("sales");
+  const [initialQuery, setInitialQuery] = React.useState("");
 
   React.useEffect(() => {
-    const storedRole = window.localStorage.getItem(ROLE_STORAGE_KEY);
-    if (
-      storedRole === "sales" ||
-      storedRole === "technical" ||
-      storedRole === "quality"
-    ) {
-      setRole(storedRole);
-    }
+    const timer = window.setTimeout(() => {
+      const storedRole = window.localStorage.getItem(ROLE_STORAGE_KEY);
+      if (
+        storedRole === "sales" ||
+        storedRole === "technical" ||
+        storedRole === "quality"
+      ) {
+        setRole(storedRole);
+      }
+      const query = new URLSearchParams(window.location.search).get("q")?.trim();
+      if (query) {
+        setInitialQuery(query);
+        setActiveView("ask");
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const loadWorkspace = React.useCallback(async () => {
@@ -80,7 +89,8 @@ export function StandardsPage() {
   }, [t]);
 
   React.useEffect(() => {
-    void loadWorkspace();
+    const timer = window.setTimeout(() => void loadWorkspace(), 0);
+    return () => window.clearTimeout(timer);
   }, [loadWorkspace]);
 
   const changeRole = (nextRole: StandardsRole) => {
@@ -135,40 +145,41 @@ export function StandardsPage() {
     }
   };
 
-  const renderView = () => {
-    switch (activeView) {
-      case "overview":
-        return (
-          <StandardsOverview
-            documents={documents}
-            passages={passages}
-            needsReview={needsReview}
-            role={role}
-            onNavigate={setActiveView}
-          />
-        );
-      case "library":
-        return (
-          <StandardsLibrary
-            documents={documents}
-            uploading={uploading}
-            onUpload={(files) => void uploadDocuments(files)}
-            onDelete={(document) => void removeDocument(document)}
-            getDownloadUrl={api.rag.downloadUrl}
-          />
-        );
-      case "ask":
-        return <StandardsAsk documents={documents} />;
-      case "compare":
-        return <StandardsCompare />;
-      case "datasheets":
-        return <StandardsDatasheets />;
-      default: {
-        const exhaustiveView: never = activeView;
-        return exhaustiveView;
-      }
-    }
-  };
+  const renderViews = () => (
+    <>
+      <div hidden={activeView !== "overview"}>
+        <StandardsOverview
+          documents={documents}
+          passages={passages}
+          needsReview={needsReview}
+          role={role}
+          onNavigate={setActiveView}
+        />
+      </div>
+      <div hidden={activeView !== "library"}>
+        <StandardsLibrary
+          documents={documents}
+          uploading={uploading}
+          onUpload={(files) => void uploadDocuments(files)}
+          onDelete={(document) => void removeDocument(document)}
+          getDownloadUrl={api.rag.downloadUrl}
+        />
+      </div>
+      <div hidden={activeView !== "ask"}>
+        <StandardsAsk
+          key={initialQuery}
+          documents={documents}
+          initialQuery={initialQuery}
+        />
+      </div>
+      <div hidden={activeView !== "compare"}>
+        <StandardsCompare />
+      </div>
+      <div hidden={activeView !== "datasheets"}>
+        <StandardsDatasheets />
+      </div>
+    </>
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5">
@@ -269,7 +280,7 @@ export function StandardsPage() {
           </div>
         </div>
       ) : (
-        renderView()
+        renderViews()
       )}
     </div>
   );

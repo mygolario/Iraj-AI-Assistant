@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useDropzone } from "react-dropzone";
+import { useDropzone, type FileRejection } from "react-dropzone";
 import { useTranslations } from "next-intl";
 import { IconUpload, IconTable } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,8 @@ export function FileDropzone({
   label,
   hint,
   disabled = false,
+  maxSize,
+  onRejected,
 }: {
   accept: Record<string, string[]>;
   multiple?: boolean;
@@ -20,6 +22,8 @@ export function FileDropzone({
   label?: string;
   hint?: string;
   disabled?: boolean;
+  maxSize?: number;
+  onRejected?: (rejections: FileRejection[]) => void;
 }) {
   const t = useTranslations();
   const [selected, setSelected] = React.useState<string[]>([]);
@@ -38,6 +42,8 @@ export function FileDropzone({
     multiple,
     maxFiles: multiple ? 50 : 1,
     disabled,
+    maxSize,
+    onDropRejected: onRejected,
   });
 
   return (

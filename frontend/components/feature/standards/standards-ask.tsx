@@ -20,23 +20,24 @@ import type { RagResult, StandardDocument } from "@/lib/types";
 
 interface StandardsAskProps {
   documents: StandardDocument[];
+  initialQuery?: string;
 }
 
-const SUGGESTIONS = [
-  "ASTM A615 Grade 60 yield strength",
-  "B500B tensile strength and elongation",
-  "Compare chemical composition requirements",
-  "Which diameters are covered?",
-];
-
-export function StandardsAsk({ documents }: StandardsAskProps) {
+export function StandardsAsk({ documents, initialQuery = "" }: StandardsAskProps) {
   const t = useTranslations("standardsWorkspace");
-  const [query, setQuery] = React.useState("");
+  const [query, setQuery] = React.useState(initialQuery);
   const [selectedStandard, setSelectedStandard] = React.useState("all");
   const [results, setResults] = React.useState<RagResult[] | null>(null);
   const [selectedResult, setSelectedResult] = React.useState<RagResult | null>(null);
   const [searching, setSearching] = React.useState(false);
   const [error, setError] = React.useState("");
+  const requestId = React.useRef(0);
+  const suggestions = [
+    t("suggestion_1"),
+    t("suggestion_2"),
+    t("suggestion_3"),
+    t("suggestion_4"),
+  ];
 
   const standards = React.useMemo(
     () =>
@@ -53,6 +54,7 @@ export function StandardsAsk({ documents }: StandardsAskProps) {
   const runSearch = async (searchQuery: string) => {
     const normalized = searchQuery.trim();
     if (!normalized) return;
+    const currentRequest = ++requestId.current;
     setQuery(normalized);
     setSearching(true);
     setError("");
@@ -63,15 +65,17 @@ export function StandardsAsk({ documents }: StandardsAskProps) {
         standards: selectedStandard === "all" ? [] : [selectedStandard],
         limit: 30,
       });
+      if (currentRequest !== requestId.current) return;
       setResults(nextResults);
       setSelectedResult(nextResults[0] ?? null);
     } catch (searchError) {
+      if (currentRequest !== requestId.current) return;
       const message =
         searchError instanceof Error ? searchError.message : t("search_failed");
       setError(message);
       toast.error(t("search_failed"), { description: message });
     } finally {
-      setSearching(false);
+      if (currentRequest === requestId.current) setSearching(false);
     }
   };
 
@@ -131,10 +135,11 @@ export function StandardsAsk({ documents }: StandardsAskProps) {
                   </select>
                 </label>
                 <div className="flex flex-wrap gap-1.5 sm:ms-auto">
-                  {SUGGESTIONS.slice(0, 2).map((suggestion) => (
+                  {suggestions.slice(0, 2).map((suggestion) => (
                     <button
                       key={suggestion}
                       type="button"
+                      disabled={searching}
                       onClick={() => void runSearch(suggestion)}
                       className="rounded-sm border border-line bg-bg-subtle px-2.5 py-1.5 text-xs text-ink-muted transition-colors hover:border-line-strong hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
@@ -300,7 +305,7 @@ export function StandardsAsk({ documents }: StandardsAskProps) {
       {!searching && results === null && !error && (
         <Panel tone="subtle">
           <PanelBody className="grid gap-3 p-4 sm:grid-cols-2">
-            {SUGGESTIONS.map((suggestion) => (
+            {suggestions.map((suggestion) => (
               <button
                 key={suggestion}
                 type="button"

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
@@ -76,6 +77,18 @@ export function StandardsLibrary({
               accept={{ "application/pdf": [".pdf"], "text/plain": [".txt"] }}
               multiple
               disabled={uploading}
+              maxSize={25 * 1024 * 1024}
+              onRejected={(rejections) =>
+                toast.error(t("upload_rejected"), {
+                  description: rejections
+                    .slice(0, 3)
+                    .map(
+                      (rejection) =>
+                        `${rejection.file.name}: ${rejection.errors[0]?.message ?? t("invalid_file")}`,
+                    )
+                    .join("\n"),
+                })
+              }
               onFiles={onUpload}
               label={uploading ? t("uploading_documents") : t("upload_label")}
               hint={t("upload_hint")}
