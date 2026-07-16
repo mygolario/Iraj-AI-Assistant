@@ -2,9 +2,11 @@ import os
 import re
 import tempfile
 from datetime import datetime
+from functools import partial
 
 from fastapi import APIRouter, HTTPException, UploadFile
 from fastapi.responses import FileResponse
+from starlette.concurrency import run_in_threadpool
 
 from api.schemas import DatasheetRequest, QueryRequest, StandardsCompareRequest
 from config import UPLOAD_DIR
@@ -21,16 +23,21 @@ router = APIRouter(prefix="/api/rag", tags=["rag"])
 
 ALLOWED_STD_EXT = {".pdf", ".txt"}
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
+MAX_UPLOAD_FILES = 20
+MAX_REQUEST_BYTES = 100 * 1024 * 1024
 
 
 @router.post("/index")
 async def index_standards(files: list[UploadFile]):
     if not files:
         raise HTTPException(400, "No files provided.")
+    if len(files) > MAX_UPLOAD_FILES:
+        raise HTTPException(400, f"Upload at most {MAX_UPLOAD_FILES} files at once.")
 
     indexed: list[str] = []
     documents: list[dict] = []
     failures: list[dict] = []
+    request_bytes = 0
     std_dir = UPLOAD_DIR / "standards"
     std_dir.mkdir(parents=True, exist_ok=True)
 
@@ -46,14 +53,26 @@ async def index_standards(files: list[UploadFile]):
             with os.fdopen(fd, "wb") as f:
                 while chunk := await uf.read(1024 * 1024):
                     total_bytes += len(chunk)
+                    request_bytes += len(chunk)
                     if total_bytes > MAX_UPLOAD_BYTES:
                         raise ValueError("File exceeds the 25 MB limit.")
+                    if request_bytes > MAX_REQUEST_BYTES:
+                        raise ValueError("Upload batch exceeds the 100 MB limit.")
                     f.write(chunk)
-            document = ingest_document(tmp_path, filename)
+            document = await run_in_threadpool(
+                partial(ingest_document, tmp_path, filename)
+            )
             documents.append(
                 {key: value for key, value in document.items() if key != "stored_path"}
             )
-            if not document.get("duplicate"):
+            if document["processing_status"] != "ready":
+                failures.append(
+                    {
+                        "filename": filename,
+                        "reason": "No searchable text could be extracted.",
+                    }
+                )
+            elif not document.get("duplicate"):
                 indexed.append(filename)
         except Exception as exc:
             failures.append({"filename": filename, "reason": str(exc)})
@@ -102,12 +121,31 @@ async def remove_standard(document_id: str):
 
 @router.post("/query")
 async def query_standards_endpoint(req: QueryRequest):
-    return query_standards(
-        req.query,
-        document_ids=req.document_ids,
-        standards=req.standards,
-        limit=req.limit,
+    return await run_in_threadpool(
+        partial(
+            query_standards,
+            req.query,
+            document_ids=req.document_ids,
+            standards=req.standards,
+            limit=req.limit,
+        )
     )
+
+
+def _strength_value(text: str, label_pattern: str) -> str | None:
+    label = re.search(label_pattern, text, re.IGNORECASE)
+    if label is None:
+        return None
+    following_text = text[label.end() : label.end() + 140]
+    match = re.search(
+        r"(?:>=|<=|≥|≤|minimum\s+)?"
+        r"(\d+(?:\.\d+)?"
+        r"(?:\s*(?:-|to)\s*\d+(?:\.\d+)?)?"
+        r"\s*(?:MPa|N/mm²|N/mm2))",
+        following_text,
+        re.IGNORECASE,
+    )
+    return match.group(1).strip() if match else None
 
 
 def _extract_specifications(specs: list[dict]) -> dict:
@@ -117,20 +155,26 @@ def _extract_specifications(specs: list[dict]) -> dict:
         "size_range": None,
         "chemical_composition": None,
     }
-    patterns = {
-        "yield_strength": r"yield\s+(?:strength|point)[^\d]{0,20}(\d+(?:\.\d+)?\s*(?:MPa|N/mm²|N/mm2)?)",
-        "tensile_strength": r"tensile\s+strength[^\d]{0,20}(\d+(?:\.\d+)?\s*(?:MPa|N/mm²|N/mm2)?)",
-        "size_range": r"(?:sizes?|diameters?|range)[^\d]{0,20}(\d+(?:\.\d+)?(?:\s*(?:-|to)\s*\d+(?:\.\d+)?)?\s*mm)",
-    }
-
     for result in specs:
         text = result["text"]
-        for field, pattern in patterns.items():
-            if extracted[field] is not None:
-                continue
-            match = re.search(pattern, text, re.IGNORECASE)
+        if extracted["yield_strength"] is None:
+            value = _strength_value(text, r"yield\s+(?:strength|point)")
+            if value:
+                extracted["yield_strength"] = {"value": value, "citation": result}
+        if extracted["tensile_strength"] is None:
+            value = _strength_value(text, r"tensile\s+strength")
+            if value:
+                extracted["tensile_strength"] = {"value": value, "citation": result}
+        if extracted["size_range"] is None:
+            match = re.search(
+                r"(?:sizes?|diameters?|range)[^\d]{0,40}"
+                r"(\d+(?:\.\d+)?"
+                r"(?:\s*(?:-|to)\s*\d+(?:\.\d+)?)?\s*mm)",
+                text,
+                re.IGNORECASE,
+            )
             if match:
-                extracted[field] = {
+                extracted["size_range"] = {
                     "value": match.group(1).strip(),
                     "citation": result,
                 }
@@ -144,12 +188,38 @@ def _extract_specifications(specs: list[dict]) -> dict:
     return extracted
 
 
+def _find_spec_sources(grade: str, document_ids: list[str]) -> list[dict]:
+    grade_results = query_standards(
+        grade,
+        document_ids=document_ids,
+        limit=50,
+    )
+    scoped_document_ids = document_ids or list(
+        {result["document_id"] for result in grade_results}
+    )
+    if not scoped_document_ids:
+        return grade_results
+
+    results_by_id = {result["id"]: result for result in grade_results}
+    for property_query in (
+        "yield strength",
+        "tensile strength",
+        "diameter size range",
+        "chemical composition carbon manganese",
+    ):
+        property_results = query_standards(
+            property_query,
+            document_ids=scoped_document_ids,
+            limit=20,
+        )
+        results_by_id.update({result["id"]: result for result in property_results})
+    return list(results_by_id.values())
+
+
 @router.post("/datasheet")
 async def compile_datasheet(req: DatasheetRequest):
-    specs = query_standards(
-        req.grade,
-        document_ids=req.document_ids,
-        limit=50,
+    specs = await run_in_threadpool(
+        partial(_find_spec_sources, req.grade, req.document_ids)
     )
     extracted = _extract_specifications(specs)
     available = any(value is not None for value in extracted.values())
@@ -186,10 +256,8 @@ async def compile_datasheet(req: DatasheetRequest):
 async def compare_standards(req: StandardsCompareRequest):
     comparisons = []
     for grade in req.grades:
-        sources = query_standards(
-            grade,
-            document_ids=req.document_ids,
-            limit=50,
+        sources = await run_in_threadpool(
+            partial(_find_spec_sources, grade, req.document_ids)
         )
         extracted = _extract_specifications(sources)
         comparisons.append(

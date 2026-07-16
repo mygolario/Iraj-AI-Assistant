@@ -30,7 +30,9 @@ MARKET_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_DIR = BACKEND_DIR / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-STANDARDS_CACHE_DIR = CACHE_DIR / "standards"
+STANDARDS_CACHE_DIR = Path(
+    os.environ.get("STANDARDS_STORAGE_DIR") or str(CACHE_DIR / "standards")
+).expanduser()
 STANDARDS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 STANDARDS_LIBRARY_FILE = STANDARDS_CACHE_DIR / "library.json"
 STANDARDS_INDEX_FILE = STANDARDS_CACHE_DIR / "index.json"

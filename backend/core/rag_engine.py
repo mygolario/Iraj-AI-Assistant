@@ -21,6 +21,7 @@ from config import (
 )
 
 _WRITE_LOCK = threading.Lock()
+_INGEST_LOCK = threading.Lock()
 _DOCUMENT_INDEX: list[dict] = []
 _DOCUMENTS: list[dict] = []
 
@@ -119,7 +120,7 @@ def _detect_metadata(filename: str, sample: str) -> dict:
         if family in combined:
             standard = family
 
-    year_match = re.search(r"\b(?:19|20)\d{2}\b", combined)
+    year_match = re.search(r"(?<!\d)(?:19|20)\d{2}(?!\d)", combined)
     has_persian = bool(re.search(r"[\u0600-\u06ff]", sample))
     return {
         "standard": standard,
@@ -149,11 +150,37 @@ def _extract_pages(file_path: str) -> list[tuple[int, str]]:
     return [(1, content)]
 
 
+def _split_long_text(text: str, maximum_length: int, overlap: int = 120) -> list[str]:
+    if len(text) <= maximum_length:
+        return [text]
+    chunks: list[str] = []
+    start = 0
+    while start < len(text):
+        end = min(start + maximum_length, len(text))
+        if end < len(text):
+            boundary = text.rfind(" ", start, end)
+            if boundary > start + maximum_length // 2:
+                end = boundary
+        chunk = text[start:end].strip()
+        if chunk:
+            chunks.append(chunk)
+        if end >= len(text):
+            break
+        start = max(end - overlap, start + 1)
+    return chunks
+
+
 def _chunk_page(text: str, maximum_length: int = 1200) -> list[str]:
     paragraphs = [part.strip() for part in re.split(r"\n\s*\n|\n", text) if part.strip()]
     chunks: list[str] = []
     current = ""
     for paragraph in paragraphs:
+        if len(paragraph) > maximum_length:
+            if current:
+                chunks.append(current)
+                current = ""
+            chunks.extend(_split_long_text(paragraph, maximum_length))
+            continue
         candidate = f"{current}\n{paragraph}".strip()
         if current and len(candidate) > maximum_length:
             chunks.append(current)
@@ -165,7 +192,7 @@ def _chunk_page(text: str, maximum_length: int = 1200) -> list[str]:
     return chunks
 
 
-def ingest_document(file_path: str, original_name: str | None = None) -> dict:
+def _ingest_document(file_path: str, original_name: str | None = None) -> dict:
     if not file_path or not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
         raise ValueError("The uploaded document is empty or unavailable.")
 
@@ -230,6 +257,11 @@ def ingest_document(file_path: str, original_name: str | None = None) -> dict:
     return dict(document)
 
 
+def ingest_document(file_path: str, original_name: str | None = None) -> dict:
+    with _INGEST_LOCK:
+        return _ingest_document(file_path, original_name)
+
+
 def index_document(file_path: str) -> bool:
     try:
         return ingest_document(file_path)["processing_status"] == "ready"
@@ -254,19 +286,30 @@ def get_document(document_id: str) -> dict | None:
 
 
 def delete_document(document_id: str) -> bool:
-    document = next((doc for doc in _DOCUMENTS if doc["id"] == document_id), None)
-    if document is None:
-        return False
-    try:
-        Path(document["stored_path"]).unlink(missing_ok=True)
-    except OSError:
-        pass
-    _DOCUMENTS.remove(document)
-    _DOCUMENT_INDEX[:] = [
-        passage for passage in _DOCUMENT_INDEX if passage["document_id"] != document_id
-    ]
-    _persist_library()
-    return True
+    with _INGEST_LOCK:
+        document = next((doc for doc in _DOCUMENTS if doc["id"] == document_id), None)
+        if document is None:
+            return False
+        removed_passages = [
+            passage
+            for passage in _DOCUMENT_INDEX
+            if passage["document_id"] == document_id
+        ]
+        _DOCUMENTS.remove(document)
+        _DOCUMENT_INDEX[:] = [
+            passage
+            for passage in _DOCUMENT_INDEX
+            if passage["document_id"] != document_id
+        ]
+        _persist_library()
+        try:
+            Path(document["stored_path"]).unlink(missing_ok=True)
+        except OSError:
+            _DOCUMENTS.append(document)
+            _DOCUMENT_INDEX.extend(removed_passages)
+            _persist_library()
+            return False
+        return True
 
 
 def _expanded_terms(query: str) -> list[str]:
