@@ -33,16 +33,44 @@ export interface BiResult {
 }
 
 export interface RagResult {
+  id: string;
+  document_id: string;
   text: string;
   passage: string;
   source: string;
   page: number;
   score: number;
+  strength: "strong" | "related" | "weak";
   metadata: {
     source: string;
     standard: string;
+    standard_code: string;
     page: number;
+    document_id: string;
   };
+}
+
+export interface StandardDocument {
+  id: string;
+  filename: string;
+  title: string;
+  standard: string;
+  standard_code: string;
+  edition: string;
+  language: string;
+  status: "active" | "needs_review" | "archived";
+  processing_status: "processing" | "extracting" | "ready" | "failed";
+  size_bytes: number;
+  page_count: number;
+  passage_count: number;
+  uploaded_at: string;
+  updated_at: string;
+  duplicate?: boolean;
+}
+
+export interface StandardEvidence {
+  value: string;
+  citation: RagResult;
 }
 
 export interface DatasheetSpec {
@@ -54,7 +82,15 @@ export interface DatasheetSpec {
   tensile_strength?: string | null;
   size_range?: string | null;
   chemical_composition?: string | null;
+  evidence: Record<string, StandardEvidence | null>;
   sources: RagResult[];
+}
+
+export interface StandardComparison {
+  grade: string;
+  specifications: Record<string, string | null>;
+  evidence: Record<string, StandardEvidence | null>;
+  source_count: number;
 }
 
 export interface PriceFeed {

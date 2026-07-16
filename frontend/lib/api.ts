@@ -10,6 +10,8 @@ import type {
   PriceFeed,
   RagResult,
   RoadmapRequest,
+  StandardComparison,
+  StandardDocument,
   SystemHealth,
 } from "./types";
 
@@ -121,23 +123,64 @@ export const api = {
 
   rag: {
     state: () =>
-      request<{ records: number; files: number; files_list: string[] }>(
+      request<{
+        records: number;
+        files: number;
+        files_list: string[];
+        ready_files: number;
+        needs_review: number;
+      }>(
         "/api/rag/state",
       ),
-    index: async (files: File[]): Promise<{ indexed: string[]; total_records: number }> => {
+    documents: () =>
+      request<{ documents: StandardDocument[] }>("/api/rag/documents"),
+    index: async (
+      files: File[],
+    ): Promise<{
+      indexed: string[];
+      documents: StandardDocument[];
+      failures: { filename: string; reason: string }[];
+      total_records: number;
+    }> => {
       const form = new FormData();
       for (const f of files) form.append("files", f);
       return request("/api/rag/index", { method: "POST", body: form });
     },
-    query: (query: string) =>
+    deleteDocument: (documentId: string) =>
+      request<{ ok: boolean }>(`/api/rag/documents/${documentId}`, {
+        method: "DELETE",
+      }),
+    downloadUrl: (documentId: string) =>
+      `${API_BASE}/api/rag/documents/${documentId}/download`,
+    query: (
+      query: string,
+      options: {
+        document_ids?: string[];
+        standards?: string[];
+        limit?: number;
+      } = {},
+    ) =>
       request<RagResult[]>("/api/rag/query", {
         method: "POST",
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query, ...options }),
       }),
-    datasheet: (grade: string, company: string) =>
+    datasheet: (
+      grade: string,
+      company: string,
+      documentIds: string[] = [],
+    ) =>
       request<DatasheetSpec>("/api/rag/datasheet", {
         method: "POST",
-        body: JSON.stringify({ grade, company }),
+        body: JSON.stringify({
+          grade,
+          company,
+          document_ids: documentIds,
+        }),
+      }),
+    compare: (grades: string[], documentIds: string[] = []) =>
+      request<{ comparisons: StandardComparison[] }>("/api/rag/compare", {
+        method: "POST",
+        body: JSON.stringify({ grades, document_ids: documentIds }),
       }),
   },
 

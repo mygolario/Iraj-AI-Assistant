@@ -12,12 +12,14 @@ export function FileDropzone({
   onFiles,
   label,
   hint,
+  disabled = false,
 }: {
   accept: Record<string, string[]>;
   multiple?: boolean;
   onFiles: (files: File[]) => void;
   label?: string;
   hint?: string;
+  disabled?: boolean;
 }) {
   const t = useTranslations();
   const [selected, setSelected] = React.useState<string[]>([]);
@@ -35,6 +37,7 @@ export function FileDropzone({
     accept,
     multiple,
     maxFiles: multiple ? 50 : 1,
+    disabled,
   });
 
   return (
@@ -42,6 +45,7 @@ export function FileDropzone({
       {...getRootProps()}
       className={cn(
         "group flex cursor-pointer flex-col items-center justify-center gap-3 rounded-md border border-dashed px-6 py-10 text-center transition-colors",
+        disabled && "cursor-not-allowed opacity-60",
         isDragActive
           ? "border-accent bg-accent-soft"
           : "border-line-strong bg-bg-subtle hover:border-accent/50 hover:bg-bg-sunken",
