@@ -87,7 +87,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const { label, description } = usePageTitle(pathname, locale);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-line bg-background px-4 md:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-line bg-background px-4 md:px-6 print:hidden">
       <button
         onClick={onMenuClick}
         className="rounded-sm p-2 text-ink-muted transition-colors hover:bg-bg-subtle hover:text-ink lg:hidden"

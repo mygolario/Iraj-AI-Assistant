@@ -39,6 +39,12 @@ STANDARDS_INDEX_FILE = STANDARDS_CACHE_DIR / "index.json"
 STANDARDS_FILE_DIR = STANDARDS_CACHE_DIR / "files"
 STANDARDS_FILE_DIR.mkdir(parents=True, exist_ok=True)
 
+BI_CACHE_DIR = CACHE_DIR / "bi"
+BI_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+BI_INDEX_FILE = BI_CACHE_DIR / "index.json"
+BI_SNAPSHOTS_DIR = BI_CACHE_DIR / "snapshots"
+BI_SNAPSHOTS_DIR.mkdir(parents=True, exist_ok=True)
+
 CORS_ORIGINS = [
     o.strip()
     for o in os.environ.get(

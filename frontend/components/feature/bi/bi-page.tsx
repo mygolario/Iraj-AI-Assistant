@@ -1,261 +1,265 @@
 "use client";
 
 import * as React from "react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useLocale, useTranslations } from "next-intl";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
-import {
-  IconRevenue,
-  IconTonnage,
-  IconAvgPrice,
-  IconConversion,
-  IconTable,
   IconAnalytics,
-  IconLoader,
+  IconTrendUp,
+  IconUsers,
+  IconTable,
+  IconSpark,
+  IconWarning,
+  IconChevronDown,
 } from "@/components/ui/icons";
-import { useTranslations } from "next-intl";
-import { useTheme } from "next-themes";
-import { api } from "@/lib/api";
-import type { BiResult } from "@/lib/types";
-import { Badge } from "@/components/ui/badge";
-import { cn, formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
-import { FileDropzone } from "@/components/ui/file-dropzone";
-import { StatCard } from "@/components/ui/stat-card";
+import { cn } from "@/lib/utils";
+import { aggregateRows, aggregateToKpis, EMPTY_FILTERS, hasActiveFilters } from "@/lib/bi-filters";
+import { BiEmptyState } from "./bi-empty-state";
+import { BiFiltersBar } from "./bi-filters-bar";
+import { BiKpiGrid } from "./bi-kpi-grid";
+import { BiTrendChart } from "./bi-trend-chart";
+import { BiMixPanels } from "./bi-mix-panels";
+import { BiRecordsTable } from "./bi-records-table";
+import { BiInsightsPanel } from "./bi-insights-panel";
+import { BiDatasetSwitcher } from "./bi-dataset-switcher";
+import { BiExportMenu } from "./bi-export-menu";
+import { useBiData } from "./use-bi-data";
 
-// Warm chart palettes — graphite + copper + neutral steps. No indigo/violet/cyan.
-// SVG fill/stroke attributes don't resolve CSS vars reliably, so we keep two
-// hex palettes and pick via useTheme. Cream ink replaces graphite on dark.
-const GRADE_COLORS_LIGHT = [
-  "#b45309",
-  "#1a1815",
-  "#8a8478",
-  "#c68a2e",
-  "#3f7d52",
-  "#3d6b8c",
-  "#d6cfc1",
-  "#5c574f",
-];
+type Tab = "overview" | "trends" | "mix" | "records" | "insights";
 
-const GRADE_COLORS_DARK = [
-  "#c68a2e",
-  "#f0ebe0",
-  "#8a8273",
-  "#d97706",
-  "#6ea87f",
-  "#6b9bb8",
-  "#3a352c",
-  "#b3ab9a",
-];
+const SKIP_REASON_LABEL_KEYS: Record<string, string> = {
+  missing_required_columns: "bi.skip_reason_missing_required_columns",
+  missing_tonnage_or_price: "bi.skip_reason_missing_tonnage_or_price",
+  non_numeric_tonnage_or_price: "bi.skip_reason_non_numeric_tonnage_or_price",
+  negative_value: "bi.skip_reason_negative_value",
+};
 
-function ChartTooltip({
-  active,
-  payload,
-  label,
-  formatter,
+function DataQualityBanner({
+  rowsSkipped,
+  rowsUsed,
+  skippedReasons,
 }: {
-  active?: boolean;
-  payload?: Array<{ name: string; value: number; color: string }>;
-  label?: string;
-  formatter: (v: number) => string;
+  rowsSkipped: number;
+  rowsUsed: number;
+  skippedReasons: Record<string, number>;
 }) {
-  if (!active || !payload?.length) return null;
+  const t = useTranslations();
+  const [open, setOpen] = React.useState(false);
+  if (rowsSkipped <= 0) return null;
+
   return (
-    <div className="rounded-sm border border-line bg-card px-3 py-2 text-[12px] shadow-[var(--shadow-3)]">
-      <div className="mb-1 font-semibold text-ink">{label}</div>
-      {payload.map((p, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <span className="size-2 rounded-full" style={{ background: p.color }} />
-          <span className="text-ink-muted">{p.name}:</span>
-          <span className="font-semibold text-ink tabular-nums">{formatter(p.value)}</span>
-        </div>
-      ))}
+    <div className="rounded-md border border-line bg-bg-subtle p-3.5 print:hidden">
+      <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-2.5 text-start">
+        <IconWarning className="size-4 shrink-0 text-warning" />
+        <p className="flex-1 text-[13px] text-ink-muted">
+          {t("bi.data_quality_summary", { skipped: String(rowsSkipped), used: String(rowsUsed) })}
+        </p>
+        <IconChevronDown className={cn("size-4 shrink-0 text-ink-subtle transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <ul className="mt-3 flex flex-col gap-1 ps-6 text-[12px] text-ink-subtle">
+          {Object.entries(skippedReasons).map(([reason, count]) => (
+            <li key={reason}>
+              {SKIP_REASON_LABEL_KEYS[reason] ? t(SKIP_REASON_LABEL_KEYS[reason]) : reason} ({count})
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
 
 export function BiPage() {
   const t = useTranslations();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-  const gradeColors = isDark ? GRADE_COLORS_DARK : GRADE_COLORS_LIGHT;
-  const gridStroke = isDark ? "rgba(240,235,224,0.08)" : "#e4dfd4";
-  const tickFill = isDark ? "#a89f8e" : "#8a8478";
-  const cursorFill = isDark ? "rgba(240,235,224,0.04)" : "#f4f1ec";
-  const [result, setResult] = React.useState<BiResult | null>(null);
-  const [loading, setLoading] = React.useState(false);
+  const locale = useLocale();
+  const [tab, setTab] = React.useState<Tab>("overview");
+  const [trendMetric, setTrendMetric] = React.useState<"revenue" | "tonnage">("revenue");
+  const bi = useBiData();
 
-  const handleUpload = async (files: File[]) => {
+  const handleFiles = async (files: File[], mode: "new" | "append" = "new") => {
     const file = files[0];
     if (!file) return;
-    setLoading(true);
     try {
-      const res = await api.bi.upload(file);
-      setResult(res);
-      try {
-        localStorage.setItem("iraj-last-bi", JSON.stringify(res));
-      } catch {
-        /* ignore */
-      }
+      const snap = await bi.upload(file, { label: file.name, mode });
       toast.success(t("bi.processed"), {
-        description: t("bi.processed_desc", { records: String(res.rows.length), grades: String(res.byGrade.length) }),
+        description: t("bi.processed_desc", {
+          records: String(snap.rows.length),
+          grades: String(snap.byGrade.length),
+        }),
       });
     } catch (e) {
       toast.error(t("bi.process_failed"), { description: (e as Error).message });
-    } finally {
-      setLoading(false);
     }
   };
 
-  const k = result?.kpis;
+  const current = bi.current;
+  const filtersActive = hasActiveFilters(bi.filters);
+  const displayAgg = React.useMemo(
+    () => (current ? aggregateRows(bi.filteredRows) : null),
+    [current, bi.filteredRows],
+  );
+  const displayKpis = React.useMemo(() => {
+    if (!current) return null;
+    return filtersActive && displayAgg ? aggregateToKpis(displayAgg, current.kpis) : current.kpis;
+  }, [current, filtersActive, displayAgg]);
+
+  const displayTimeSeries = filtersActive && displayAgg ? displayAgg.byMonth : current?.timeSeries ?? [];
+  const displayByGrade = filtersActive && displayAgg ? displayAgg.byGrade : current?.byGrade ?? [];
+  const displayByCustomer = filtersActive && displayAgg ? displayAgg.byCustomer : current?.byCustomer ?? [];
+  const displayByRegion = filtersActive && displayAgg ? displayAgg.byRegion : current?.byRegion ?? [];
+
+  const currentRows = React.useMemo(() => current?.rows ?? [], [current]);
+  const gradeOptions = React.useMemo(
+    () => Array.from(new Set(currentRows.map((r) => String(r["rebar grade"] || "")).filter(Boolean))),
+    [currentRows],
+  );
+  const customerOptions = React.useMemo(
+    () => Array.from(new Set(currentRows.map((r) => String(r.customer || "")).filter(Boolean))),
+    [currentRows],
+  );
+  const statusOptions = React.useMemo(
+    () => Array.from(new Set(currentRows.map((r) => String(r.status || "")).filter(Boolean))),
+    [currentRows],
+  );
+
+  const tabs: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { id: "overview", label: t("bi.tab_overview"), icon: IconAnalytics },
+    { id: "trends", label: t("bi.tab_trends"), icon: IconTrendUp },
+    { id: "mix", label: t("bi.tab_mix"), icon: IconUsers },
+    { id: "records", label: t("bi.tab_records"), icon: IconTable },
+    { id: "insights", label: t("bi.tab_insights"), icon: IconSpark },
+  ];
+
+  if (bi.snapshotsLoading || bi.currentLoading) {
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="skeleton h-32 rounded-md" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!current) {
+    return <BiEmptyState onFiles={(files) => handleFiles(files)} loading={bi.uploading} />;
+  }
 
   return (
-    <div className="flex flex-col gap-6">
-      <FileDropzone
-        accept={{ "text/csv": [".csv"], "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"] }}
-        onFiles={handleUpload}
-        label={t("bi.upload_label")}
-        hint={t("bi.upload_hint")}
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <BiDatasetSwitcher
+          snapshots={bi.snapshots}
+          currentId={current.id}
+          onSelect={bi.selectSnapshot}
+          onRename={bi.renameSnapshot}
+          onDelete={bi.deleteSnapshot}
+          onUploadNew={(file) => handleFiles([file], "new")}
+          onAppend={(file) => handleFiles([file], "append")}
+          uploading={bi.uploading}
+        />
+        <div className="print:hidden">
+          <BiExportMenu snapshot={current} />
+        </div>
+      </div>
+
+      <DataQualityBanner
+        rowsSkipped={current.dataQuality.rows_skipped}
+        rowsUsed={current.dataQuality.rows_used}
+        skippedReasons={current.dataQuality.skipped_reasons}
       />
 
-      {loading && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="skeleton h-32 rounded-md" />
-          ))}
-        </div>
-      )}
+      <div className="print:hidden">
+        <BiFiltersBar
+          filters={bi.filters}
+          onChange={bi.setFilters}
+          gradeOptions={gradeOptions}
+          customerOptions={customerOptions}
+          statusOptions={statusOptions}
+          compareEnabled={bi.prefs.compareEnabled}
+          onCompareToggle={bi.setCompareEnabled}
+        />
+      </div>
 
-      {!loading && k && (
-        <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label={t("bi.total_revenue")} value={formatCurrency(k.revenue)} icon={IconRevenue} tone="accent" sub={t("bi.total_revenue_sub")} />
-            <StatCard label={t("bi.volume_sold")} value={formatNumber(k.tonnage, " t")} icon={IconTonnage} tone="ink" sub={t("bi.volume_sold_sub")} />
-            <StatCard label={t("bi.avg_price")} value={formatCurrency(k.avg_price)} icon={IconAvgPrice} tone="ink" sub={t("bi.avg_price_sub")} />
-            <StatCard label={t("bi.conversion")} value={formatPercent(k.conversion_rate)} icon={IconConversion} tone="positive" sub={t("bi.conversion_sub")} />
-          </div>
+      <div className="inline-flex w-fit flex-wrap gap-1 rounded-sm border border-line bg-card p-1 shadow-[var(--shadow-1)] print:hidden">
+        {tabs.map((tabItem) => (
+          <button
+            key={tabItem.id}
+            onClick={() => setTab(tabItem.id)}
+            className={cn(
+              "relative flex items-center gap-2 rounded-sm px-4 py-2 text-sm font-medium transition-colors",
+              tab === tabItem.id ? "text-accent-ink" : "text-ink-muted hover:text-ink",
+            )}
+          >
+            {tab === tabItem.id && (
+              <motion.span
+                layoutId="bi-tab"
+                className="absolute inset-0 rounded-sm bg-accent-soft"
+                transition={{ type: "spring", stiffness: 400, damping: 32 }}
+              />
+            )}
+            <tabItem.icon className="relative size-4" />
+            <span className="relative">{tabItem.label}</span>
+          </button>
+        ))}
+      </div>
 
-          {result!.byGrade.length > 0 && (
-            <div className="grid gap-5 lg:grid-cols-2">
-              <div className="rounded-md border border-line bg-card p-5 shadow-[var(--shadow-1)]">
-                <div className="mb-4 flex items-center gap-2">
-                  <IconAnalytics className="size-4 text-accent" />
-                  <h3 className="font-display text-base leading-tight tracking-tight text-ink">{t("bi.tonnage_by_grade")}</h3>
-                </div>
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={result!.byGrade} margin={{ top: 4, right: 8, bottom: 4, left: -12 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
-                    <XAxis dataKey="grade" tick={{ fill: tickFill, fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fill: tickFill, fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <Tooltip cursor={{ fill: cursorFill }} content={<ChartTooltip formatter={(v: number) => formatNumber(v, " t")} />} />
-                    <Bar dataKey="tonnage" name="Tonnage" radius={[3, 3, 0, 0]} maxBarSize={48}>
-                      {result!.byGrade.map((_, i) => (
-                        <Cell key={i} fill={gradeColors[i % gradeColors.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+      <div key={tab} className="flex flex-col gap-5 transition-opacity duration-200">
+        {tab === "overview" && displayKpis && (
+          <>
+            <BiKpiGrid
+              kpis={displayKpis}
+              timeSeries={displayTimeSeries}
+              comparison={bi.prefs.compareEnabled ? bi.comparison : null}
+              pinnedKpis={bi.prefs.pinnedKpis}
+              onTogglePin={bi.togglePinnedKpi}
+            />
+            <BiTrendChart
+              timeSeries={displayTimeSeries}
+              forecast={filtersActive ? null : current.forecast}
+              metric={trendMetric}
+              onMetricChange={setTrendMetric}
+            />
+          </>
+        )}
 
-              <div className="rounded-md border border-line bg-card p-5 shadow-[var(--shadow-1)]">
-                <div className="mb-4 flex items-center gap-2">
-                  <IconAnalytics className="size-4 text-ink-muted" />
-                  <h3 className="font-display text-base leading-tight tracking-tight text-ink">{t("bi.revenue_by_grade")}</h3>
-                </div>
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={result!.byGrade} margin={{ top: 4, right: 8, bottom: 4, left: -12 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
-                    <XAxis dataKey="grade" tick={{ fill: tickFill, fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fill: tickFill, fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <Tooltip cursor={{ fill: cursorFill }} content={<ChartTooltip formatter={(v: number) => formatCurrency(v)} />} />
-                    <Bar dataKey="revenue" name="Revenue" radius={[3, 3, 0, 0]} maxBarSize={48}>
-                      {result!.byGrade.map((_, i) => (
-                        <Cell key={i} fill={gradeColors[(i + 1) % gradeColors.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
+        {tab === "trends" && (
+          <BiTrendChart
+            timeSeries={displayTimeSeries}
+            forecast={filtersActive ? null : current.forecast}
+            metric={trendMetric}
+            onMetricChange={setTrendMetric}
+          />
+        )}
 
-          {result!.rows.length > 0 && (
-            <div className="rounded-md border border-line bg-card shadow-[var(--shadow-1)]">
-              <div className="flex items-center gap-2 border-b border-line px-5 py-4">
-                <IconTable className="size-4 text-ink-muted" />
-                <h3 className="font-display text-base leading-tight tracking-tight text-ink">{t("bi.sales_records")}</h3>
-                <span className="ms-auto text-[13px] text-ink-muted">
-                  {result!.rows.length} {t("common.records")}
-                </span>
-              </div>
-              <div className="max-h-96 overflow-auto">
-                <table className="w-full text-start text-sm">
-                  <thead className="sticky top-0 bg-bg-subtle">
-                    <tr className="text-ink-subtle">
-                      {[t("common.date"), t("common.customer"), t("common.grade"), t("common.tonnage"), t("common.unit_price"), t("common.status")].map(
-                        (h) => (
-                          <th key={h} className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em]">
-                            {h}
-                          </th>
-                        ),
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {result!.rows.map((row, i) => (
-                      <tr
-                        key={i}
-                        className="border-t border-line transition-colors hover:bg-bg-subtle"
-                      >
-                        <td className="px-4 py-2.5 text-ink-muted">{row.date || "—"}</td>
-                        <td className="px-4 py-2.5 font-medium text-ink">
-                          {row.customer || "—"}
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <Badge variant="outline" size="sm" className="font-mono">
-                            {row["rebar grade"] || "—"}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-2.5 tabular-nums text-ink">{formatNumber(Number(row.tonnage), " t")}</td>
-                        <td className="px-4 py-2.5 tabular-nums text-ink">
-                          {formatCurrency(Number(row["unit price"]))}
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <Badge
-                            variant={
-                              String(row.status).toLowerCase().includes("close") ||
-                              String(row.status).toLowerCase().includes("convert")
-                                ? "positive"
-                                : "neutral"
-                            }
-                            size="sm"
-                          >
-                            {row.status || "—"}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+        {tab === "mix" && (
+          <BiMixPanels
+            byGrade={displayByGrade}
+            byCustomer={displayByCustomer}
+            byRep={filtersActive ? [] : current.byRep}
+            byRegion={displayByRegion}
+            margin={filtersActive ? null : current.margin}
+            anomalies={filtersActive ? [] : current.anomalies}
+            onGradeClick={(grade) => bi.setFilters({ ...bi.filters, grades: [grade] })}
+            onCustomerClick={(customer) => bi.setFilters({ ...bi.filters, customers: [customer] })}
+          />
+        )}
 
-      {!loading && !result && (
-        <div className="flex flex-col items-center gap-3 rounded-md border border-line bg-card py-16 text-center shadow-[var(--shadow-1)]">
-          <IconLoader className="size-7 text-ink-subtle" />
-          <p className="text-sm text-ink-muted">{t("bi.empty_state")}</p>
-        </div>
-      )}
+        {tab === "records" && <BiRecordsTable rows={bi.filteredRows} />}
+
+        {tab === "insights" && (
+          <BiInsightsPanel snapshotId={current.id} language={locale === "fa" ? "fa" : "en"} />
+        )}
+      </div>
+
+      <div className="print:hidden">
+        <button
+          onClick={() => bi.setFilters(EMPTY_FILTERS)}
+          className={cn("text-[12px] text-ink-subtle underline-offset-2 hover:underline", !filtersActive && "hidden")}
+        >
+          {t("bi.clear_filters")}
+        </button>
+      </div>
     </div>
   );
 }

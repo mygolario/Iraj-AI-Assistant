@@ -5,6 +5,12 @@ export interface Kpis {
   tonnage: number;
   avg_price: number;
   conversion_rate: number;
+  avg_deal_size: number;
+  price_volatility: number;
+  total_inquiries: number;
+  converted_deals: number;
+  avg_sales_cycle_days: number | null;
+  top5_customer_concentration_pct: number;
 }
 
 export interface SalesRow {
@@ -17,6 +23,11 @@ export interface SalesRow {
   "unit_price"?: number | string;
   status?: string;
   conversion?: number | string | boolean;
+  rep?: string | null;
+  region?: string | null;
+  cost?: number | null;
+  quote_date?: string | null;
+  close_date?: string | null;
   [key: string]: unknown;
 }
 
@@ -26,10 +37,91 @@ export interface GradeDatum {
   revenue: number;
 }
 
+export interface CustomerDatum {
+  customer: string;
+  tonnage: number;
+  revenue: number;
+  deals: number;
+}
+
+export interface RepDatum {
+  rep: string;
+  tonnage: number;
+  revenue: number;
+  deals: number;
+}
+
+export interface RegionDatum {
+  region: string;
+  tonnage: number;
+  revenue: number;
+}
+
+export interface TimeSeriesPoint {
+  month: string;
+  revenue: number;
+  tonnage: number;
+  deals: number;
+}
+
+export interface BiForecast {
+  next_month_revenue: number;
+  next_month_tonnage: number;
+  based_on_months: number;
+}
+
+export interface BiAnomaly {
+  type: "price_outlier" | "revenue_drop" | string;
+  message: string;
+  date: string | null;
+  customer: string | null;
+}
+
+export interface BiMargin {
+  gross_profit: number;
+  gross_margin_pct: number;
+}
+
+export interface BiDataQuality {
+  rows_seen: number;
+  rows_used: number;
+  rows_skipped: number;
+  skipped_reasons: Record<string, number>;
+  unmapped_headers: string[];
+  missing_required_fields: string[];
+  optional_fields_detected: string[];
+}
+
 export interface BiResult {
   kpis: Kpis;
   rows: SalesRow[];
   byGrade: GradeDatum[];
+  byCustomer: CustomerDatum[];
+  byRep: RepDatum[];
+  byRegion: RegionDatum[];
+  timeSeries: TimeSeriesPoint[];
+  forecast: BiForecast | null;
+  anomalies: BiAnomaly[];
+  margin: BiMargin | null;
+  dataQuality: BiDataQuality;
+}
+
+export interface BiSnapshot extends BiResult {
+  id: string;
+  label: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BiSnapshotMeta {
+  id: string;
+  label: string;
+  created_at: string;
+  updated_at: string;
+  row_count: number;
+  date_range: [string, string] | null;
+  revenue: number;
+  tonnage: number;
 }
 
 export interface RagResult {

@@ -16,7 +16,7 @@ import {
   IconArrowOut,
 } from "@/components/ui/icons";
 import { api } from "@/lib/api";
-import type { BiResult, MarketBriefing, RagResult } from "@/lib/types";
+import type { BiSnapshot, MarketBriefing, RagResult } from "@/lib/types";
 import { cn, formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
 import { DealCalculator } from "../deal-calculator";
 
@@ -69,7 +69,7 @@ function TileHeader({
 
 function BiSummaryTile() {
   const t = useTranslations();
-  const [bi, setBi] = React.useState<BiResult | null>(null);
+  const [bi, setBi] = React.useState<BiSnapshot | null>(null);
 
   React.useEffect(() => {
     try {

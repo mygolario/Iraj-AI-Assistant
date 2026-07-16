@@ -1,6 +1,7 @@
 import type {
   ArbitrageResult,
-  BiResult,
+  BiSnapshot,
+  BiSnapshotMeta,
   ChatMessage,
   ChatRequest,
   ContractRequest,
@@ -114,11 +115,42 @@ export const api = {
   health: () => request<SystemHealth>("/api/health"),
 
   bi: {
-    upload: async (file: File): Promise<BiResult> => {
+    upload: async (
+      file: File,
+      opts?: { label?: string; snapshotId?: string; mode?: "new" | "append" },
+    ): Promise<BiSnapshot> => {
       const form = new FormData();
       form.append("file", file);
-      return request<BiResult>("/api/bi/kpis", { method: "POST", body: form });
+      const params = new URLSearchParams();
+      if (opts?.label) params.set("label", opts.label);
+      if (opts?.snapshotId) params.set("snapshot_id", opts.snapshotId);
+      if (opts?.mode) params.set("mode", opts.mode);
+      const qs = params.toString();
+      return request<BiSnapshot>(`/api/bi/kpis${qs ? `?${qs}` : ""}`, {
+        method: "POST",
+        body: form,
+      });
     },
+    snapshots: () => request<{ items: BiSnapshotMeta[] }>("/api/bi/snapshots"),
+    snapshot: (id: string) => request<BiSnapshot>(`/api/bi/snapshots/${id}`),
+    renameSnapshot: (id: string, label: string) =>
+      request<BiSnapshot>(`/api/bi/snapshots/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ label }),
+      }),
+    deleteSnapshot: (id: string) =>
+      request<{ ok: boolean }>(`/api/bi/snapshots/${id}`, { method: "DELETE" }),
+    insights: (snapshotId: string, language = "en") =>
+      request<{ narrative: string }>("/api/bi/insights", {
+        method: "POST",
+        body: JSON.stringify({ snapshot_id: snapshotId, language }),
+      }),
+    ask: (snapshotId: string, question: string, language = "en") =>
+      request<{ answer: string }>("/api/bi/ask", {
+        method: "POST",
+        body: JSON.stringify({ snapshot_id: snapshotId, question, language }),
+      }),
+    templateUrl: () => `${API_BASE}/api/bi/template`,
   },
 
   rag: {
