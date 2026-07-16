@@ -30,6 +30,12 @@ MARKET_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_DIR = BACKEND_DIR / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
+BI_CACHE_DIR = CACHE_DIR / "bi"
+BI_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+BI_INDEX_FILE = BI_CACHE_DIR / "index.json"
+BI_SNAPSHOTS_DIR = BI_CACHE_DIR / "snapshots"
+BI_SNAPSHOTS_DIR.mkdir(parents=True, exist_ok=True)
+
 CORS_ORIGINS = [
     o.strip()
     for o in os.environ.get(

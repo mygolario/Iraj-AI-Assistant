@@ -71,3 +71,18 @@ class ChatRequest(BaseModel):
     messages: list[ChatMessage]
     system_prompt: str | None = None
     language: str = "en"
+
+
+class BiSnapshotRename(BaseModel):
+    label: str = Field(..., min_length=1, max_length=120)
+
+
+class BiInsightsRequest(BaseModel):
+    snapshot_id: str
+    language: str = "en"
+
+
+class BiAskRequest(BaseModel):
+    snapshot_id: str
+    question: str = Field(..., min_length=1)
+    language: str = "en"
